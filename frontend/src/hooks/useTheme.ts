@@ -1,30 +1,40 @@
 import { useEffect, useState } from "react";
 import { applyTheme, getSavedTheme, type Theme } from "../services/theme";
-import { useUserProfileStore } from "../stores/useUserStore";
+import { useUserStore } from "../modules/auth/stores/useUserStore";
 
 export function useTheme(): {
   theme: Theme;
   updateTheme: (theme: Theme) => void;
   toggleTheme: () => void;
 } {
-  const t = useUserProfileStore((s) => s.userProfile?.preferences.theme);
-  const [theme, setTheme] = useState<Theme>(t || getSavedTheme());
-  applyTheme(theme);
+  const savedProfileTheme = useUserStore((s) => s.userProfile?.preferences.theme);
+  const [theme, setTheme] = useState<Theme>(savedProfileTheme || getSavedTheme());
+
   useEffect(() => {
-    const observer = new MutationObserver(() => {
-      const theme = (document.documentElement.getAttribute("data-theme") ||
-        "dark") as Theme;
-      setTheme(theme);
-    });
-    observer.observe(document.documentElement, { attributes: true });
+    if (savedProfileTheme) {
+      setTheme(savedProfileTheme);
+    }
+  }, [savedProfileTheme]);
 
-    return () => observer.disconnect();
-  }, []);
-
-  const updateTheme = (theme: Theme) => {
+  useEffect(() => {
     applyTheme(theme);
-    setTheme(theme);
+  }, [theme]);
+
+  useEffect(() => {
+    if (theme !== "system") return undefined;
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleSystemThemeChange = () => applyTheme("system");
+
+    mediaQuery.addEventListener("change", handleSystemThemeChange);
+    return () => mediaQuery.removeEventListener("change", handleSystemThemeChange);
+  }, [theme]);
+
+
+  const updateTheme = (nextTheme: Theme) => {
+    setTheme(nextTheme);
   };
+
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
     updateTheme(newTheme);

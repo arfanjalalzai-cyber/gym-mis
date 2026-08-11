@@ -10,14 +10,4 @@ export const languages: Language[] = [
     code: "en",
     dir: "ltr"
   },
-  {
-    label: "Dari",
-    code: "da",
-    dir: "rtl"
-  },
-  {
-    label: "Pashto",
-    code: "pa",
-    dir: "rtl"
-  },
-]
+];

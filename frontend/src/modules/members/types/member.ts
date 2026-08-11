@@ -12,6 +12,7 @@ export interface Member {
   first_name: string;
   last_name: string;
   phone: string;
+  address: string;
   email: string | null;
   blood_group: BloodGroup | null;
   profile_picture: string | null;
@@ -25,6 +26,21 @@ export interface Member {
   bmi: number | null;
   bmi_category: BmiCategory | null;
   join_date: string;
+  membership_plan_template: number | null;
+  membership_plan_name: string | null;
+  membership_plan_duration_type: string | null;
+  membership_plan_duration_months: number | null;
+  membership_plan_fee: string | null;
+  schedule_class: number | null;
+  schedule_class_name: string | null;
+  schedule_class_code: string | null;
+  schedule_slot: number | null;
+  schedule_slot_class_name: string | null;
+  schedule_slot_class_code: string | null;
+  schedule_slot_weekday: number | null;
+  schedule_slot_start_time: string | null;
+  schedule_slot_end_time: string | null;
+  schedule_slot_trainer_name: string | null;
   status: MemberStatus;
   notes: string | null;
   created_at: string;
@@ -38,6 +54,7 @@ export interface MemberListItem {
   first_name: string;
   last_name: string;
   phone: string;
+  address: string;
   email: string | null;
   blood_group: BloodGroup | null;
   profile_picture: string | null;
@@ -49,12 +66,39 @@ export interface MemberListItem {
   bmi: number | null;
   bmi_category: BmiCategory | null;
   created_at: string;
+  membership_plan_template: number | null;
+  membership_plan_name: string | null;
+  membership_plan_duration_type: string | null;
+  membership_plan_duration_months: number | null;
+  membership_plan_fee: string | null;
+  schedule_class: number | null;
+  schedule_class_name: string | null;
+  schedule_class_code: string | null;
+  schedule_slot: number | null;
+  schedule_slot_class_name: string | null;
+  schedule_slot_class_code: string | null;
+  schedule_slot_weekday: number | null;
+  schedule_slot_start_time: string | null;
+  schedule_slot_end_time: string | null;
+  schedule_slot_trainer_name: string | null;
+}
+
+export interface MemberBodyMetricHistoryItem {
+  id: number;
+  member: number;
+  measurement_date: string;
+  height_cm: string;
+  weight_kg: string;
+  bmi: string;
+  bmi_category: BmiCategory;
+  created_at: string;
 }
 
 export interface MemberFormValues {
   first_name: string;
   last_name: string;
   phone: string;
+  address?: string;
   id_card_number?: string;
   email?: string;
   blood_group?: BloodGroup;
@@ -66,6 +110,9 @@ export interface MemberFormValues {
   height_cm?: number;
   weight_kg?: number;
   join_date: string;
+  membership_plan_template?: number | null;
+  schedule_class?: number | null;
+  schedule_slot?: number | null;
   status: MemberStatus;
   notes?: string;
 }

@@ -3,6 +3,8 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { authService } from "./authService";
 import type {
+  SignUpRequest,
+  VerifyAdminPasswordRequest,
   ForgotPasswordRequest,
   VerifyResetCodeRequest,
   ResetPasswordRequest,
@@ -14,6 +16,45 @@ import { extractAxiosError } from "@/utils/extractError";
  * Extract error message from Axios error
  */
 
+
+/**
+ * Verify Admin Password Hook
+ * Opens account creation only after the current admin password is confirmed
+ */
+export const useVerifyAdminPassword = () => {
+  return useMutation({
+    mutationFn: (data: VerifyAdminPasswordRequest) =>
+      authService.verifyAdminPassword(data),
+    onSuccess: (response) => {
+      toast.success(response.data.message || "Admin password verified");
+    },
+    onError: (error) => {
+      toast.error(extractAxiosError(error, "Admin password is incorrect"));
+    },
+  });
+};
+
+/**
+ * Sign Up Hook
+ * Creates a new user account and redirects to login
+ */
+export const useSignUp = () => {
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: (data: SignUpRequest) => authService.signup(data),
+    onSuccess: (response) => {
+      toast.success(
+        response.data.message ||
+          "Account created successfully! Please sign in."
+      );
+      navigate("/auth/login", { replace: true });
+    },
+    onError: (error) => {
+      toast.error(extractAxiosError(error, "Failed to create account"));
+    },
+  });
+};
 
 /**
  * Forgot Password Hook

@@ -1,9 +1,9 @@
-import { format } from "date-fns";
 import { Pencil } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { PageHeader } from "@/components";
 import { Button, Card, CardContent, Spinner } from "@/components/ui";
+import { useSystemPreferenceFormatters } from "@/modules/settings/hooks";
 import TrainerEmploymentStatusBadge from "../components/TrainerEmploymentStatusBadge";
 import TrainerSalaryStatusBadge from "../components/TrainerSalaryStatusBadge";
 import { useActivateTrainer, useDeactivateTrainer, useTrainer } from "../queries/useTrainers";
@@ -12,6 +12,7 @@ export default function TrainerProfilePage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const trainerId = Number(id);
+  const { formatDate } = useSystemPreferenceFormatters();
 
   const { data: trainer, isLoading } = useTrainer(trainerId, {
     enabled: Number.isInteger(trainerId) && trainerId > 0,
@@ -94,12 +95,12 @@ export default function TrainerProfilePage() {
                 label="Date of Birth"
                 value={
                   trainer.date_of_birth
-                    ? format(new Date(trainer.date_of_birth), "yyyy-MM-dd")
+                    ? formatDate(trainer.date_of_birth)
                     : "-"
                 }
               />
               <InfoRow label="Age" value={trainer.age?.toString() ?? "-"} />
-              <InfoRow label="Date Hired" value={format(new Date(trainer.date_hired), "yyyy-MM-dd")} />
+              <InfoRow label="Date Hired" value={formatDate(trainer.date_hired)} />
               <InfoRow
                 label="Classes Assigned"
                 value={

@@ -1,76 +1,77 @@
 // MIS Permissions
 export const permissions = [
-  // Core MIS Permissions
-  { name: "dashboard", value: "Dashboard" },
-  { name: "students", value: "Students" },
-  { name: "teachers", value: "Teachers" },
-  { name: "classes", value: "Classes" },
-  { name: "attendance", value: "Attendance" },
-  { name: "grades", value: "Grades" },
-  { name: "fees", value: "Fees" },
-  { name: "library", value: "Library" },
-  { name: "reports", value: "Reports" },
-  { name: "settings", value: "Settings" },
   { name: "users", value: "Users" },
-  { name: "parents", value: "Parents" },
-  { name: "academic_year", value: "Academic Year" },
   { name: "members", value: "Members" },
   { name: "staff", value: "Staff" },
+  { name: "inventory", value: "Inventory" },
+  { name: "schedule", value: "Schedule" },
+  { name: "attendance", value: "Attendance" },
+  { name: "fees", value: "Payments and Billing" },
+  { name: "reports", value: "Reports" },
+  { name: "settings", value: "Settings" },
+  { name: "cards", value: "Cards" },
 ] as const;
 
 export type Permission = (typeof permissions)[number]["name"];
 
 export const routePermissions: Record<string, Permission | Permission[]> = {
-  "/mis": "dashboard",
-  "/mis/students": "students",
-  "/mis/students/new": "students",
-  "/mis/students/:id": "students",
-  "/mis/students/:id/edit": "students",
-  "/mis/teachers": "teachers",
-  "/mis/teachers/new": "teachers",
-  "/mis/teachers/:id": "teachers",
-  "/mis/teachers/:id/edit": "teachers",
-  "/mis/classes": "classes",
-  "/mis/classes/new": "classes",
-  "/mis/classes/:id": "classes",
-  "/mis/attendance": "attendance",
-  "/mis/attendance/mark": "attendance",
-  "/mis/attendance/report": "attendance",
-  "/mis/grades": "grades",
-  "/mis/grades/entry": "grades",
-  "/mis/grades/exams": "grades",
-  "/mis/grades/report-cards": "grades",
-  "/mis/fees": "fees",
-  "/mis/fees/structure": "fees",
-  "/mis/fees/collection": "fees",
-  "/mis/fees/reports": "fees",
-  "/mis/library": "library",
-  "/mis/library/catalog": "library",
-  "/mis/library/issue": "library",
-  "/mis/library/return": "library",
-  "/mis/reports": "reports",
-  "/mis/parents": "parents",
-  "/mis/parents/:id": "parents",
-  "/mis/settings": "settings",
-  "/mis/settings/general": "settings",
-  "/mis/settings/users": "users",
-  "/mis/settings/academic-year": "academic_year",
   "/members": "members",
   "/members/new": "members",
   "/members/:id": "members",
   "/members/:id/edit": "members",
+  "/members/:id/card": "members",
   "/staff": "staff",
   "/staff/new": "staff",
   "/staff/:id": "staff",
   "/staff/:id/edit": "staff",
+  "/staff/:id/card": "staff",
+  "/inventory": "inventory",
+  "/inventory/new": "inventory",
+  "/inventory/:id": "inventory",
+  "/inventory/:id/edit": "inventory",
+  "/inventory/:id/history": "inventory",
+  "/schedule": "schedule",
+  "/schedule/classes": "schedule",
+  "/schedule/new": "schedule",
+  "/schedule/:id/edit": "schedule",
+  "/attendance": "attendance",
+  "/attendance/report": "attendance",
+  "/payments": "fees",
+  "/billing": "fees",
+  "/billing/:id": "fees",
+  "/reports": "reports",
+  "/expenses": "reports",
+  "/settings": "settings",
+  "/settings/gym-information": "settings",
+  "/settings/user-role-management": "users",
+  "/settings/membership-plans": "settings",
+  "/settings/payment-billing": "settings",
+  "/settings/notifications": "settings",
+  "/settings/security": "settings",
+  "/settings/system-preferences": "settings",
+  "/settings/backup-maintenance": "settings",
 };
 
-export const hasRoutePermission = (
-  route: string,
-  userPermissions: Permission[]
-) => {
-  const rp = routePermissions[route];
-  if (rp === undefined) return true;
-  const perm = Array.isArray(rp) ? rp : [rp];
-  return perm.some((p) => userPermissions.includes(p));
+const normalizePath = (route: string) => route.replace(/\/+$/, "") || "/";
+
+const routeMatches = (pattern: string, route: string) => {
+  const patternParts = normalizePath(pattern).split("/");
+  const routeParts = normalizePath(route).split("/");
+  if (patternParts.length !== routeParts.length) return false;
+  return patternParts.every((segment, index) => {
+    if (segment.startsWith(":")) return true;
+    return segment === routeParts[index];
+  });
+};
+
+export const hasRoutePermission = (route: string, userPermissions: Permission[]) => {
+  const direct = routePermissions[normalizePath(route)];
+  const matched =
+    direct ??
+    Object.entries(routePermissions).find(([pattern]) => routeMatches(pattern, route))?.[1];
+
+  if (matched === undefined) return true;
+
+  const requiredPermissions = Array.isArray(matched) ? matched : [matched];
+  return requiredPermissions.some((permission) => userPermissions.includes(permission));
 };

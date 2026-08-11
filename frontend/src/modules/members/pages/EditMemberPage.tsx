@@ -58,6 +58,7 @@ export default function EditMemberPage() {
           first_name: member.first_name,
           last_name: member.last_name,
           phone: member.phone,
+          address: member.address ?? "",
           id_card_number: member.id_card_number ?? "",
           email: member.email ?? "",
           blood_group: member.blood_group ?? undefined,
@@ -68,6 +69,9 @@ export default function EditMemberPage() {
           height_cm: member.height_cm ?? undefined,
           weight_kg: member.weight_kg ?? undefined,
           join_date: member.join_date,
+          membership_plan_template: member.membership_plan_template,
+          schedule_class: member.schedule_class,
+          schedule_slot: member.schedule_slot,
           status: member.status,
           notes: member.notes ?? "",
         }}

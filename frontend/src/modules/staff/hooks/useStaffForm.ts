@@ -14,13 +14,14 @@ export const useStaffForm = (
   return useForm<StaffFormValues>({
     resolver: zodResolver(staffFormSchema) as Resolver<StaffFormValues>,
     defaultValues: {
-      position: initialValues?.position ?? "clerk",
+      position: initialValues?.position ?? "manager",
       position_other: initialValues?.position_other ?? "",
       first_name: initialValues?.first_name ?? "",
       last_name: initialValues?.last_name ?? "",
       father_name: initialValues?.father_name ?? "",
       mobile_number: initialValues?.mobile_number ?? "",
       whatsapp_number: initialValues?.whatsapp_number ?? "",
+      address: initialValues?.address ?? "",
       id_card_number: initialValues?.id_card_number ?? "",
       email: initialValues?.email ?? "",
       blood_group: initialValues?.blood_group ?? undefined,
@@ -31,6 +32,7 @@ export const useStaffForm = (
       salary_currency: initialValues?.salary_currency ?? "AFN",
       salary_status: initialValues?.salary_status ?? "unpaid",
       employment_status: initialValues?.employment_status ?? "active",
+      assigned_class_ids: initialValues?.assigned_class_ids ?? [],
       notes: initialValues?.notes ?? "",
     },
   });

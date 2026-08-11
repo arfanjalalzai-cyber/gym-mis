@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
@@ -14,7 +14,6 @@ import {
   Key,
   Eye,
   EyeOff,
-  Globe,
   Palette,
   Check,
 } from "lucide-react";
@@ -30,6 +29,7 @@ import {
 } from "@/components/ui";
 import Input from "@/components/ui/Input";
 import { useUserStore } from "@/modules/auth/stores/useUserStore";
+import { useTheme } from "@/hooks/useTheme";
 import { changePasswordSchema } from "@/schemas/loginPageValidation";
 import type { ChangePasswordFormInputs } from "@/schemas/loginPageValidation";
 import { getRoleNameDisplay } from "@/data/roles";
@@ -46,7 +46,6 @@ type ProfileUpdateFormData = z.infer<typeof profileUpdateSchema>;
 
 // Preference schema
 const preferencesSchema = z.object({
-  language_preference: z.string(),
   theme: z.enum(["light", "dark", "system"]),
 });
 
@@ -63,6 +62,7 @@ export default function UserProfile() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const { updateTheme } = useTheme();
 
   const {
     userProfile,
@@ -101,14 +101,22 @@ export default function UserProfile() {
   const {
     register: registerPreferences,
     handleSubmit: handleSubmitPreferences,
-    formState: { errors: preferencesErrors, isDirty: isPreferencesDirty },
+    watch: watchPreferences,
+    reset: resetPreferences,
+    formState: { isDirty: isPreferencesDirty },
   } = useForm<PreferencesFormData>({
     resolver: zodResolver(preferencesSchema),
     defaultValues: {
-      language_preference: userProfile?.preferences?.language || "en",
       theme: userProfile?.preferences?.theme || "system",
     },
   });
+  const selectedTheme = watchPreferences("theme");
+
+  useEffect(() => {
+    resetPreferences({
+      theme: userProfile?.preferences?.theme || "system",
+    });
+  }, [resetPreferences, userProfile?.preferences?.theme]);
 
   // Handle profile update
   const onUpdateProfile = async (data: ProfileUpdateFormData) => {
@@ -135,6 +143,7 @@ export default function UserProfile() {
   const onUpdatePreferences = async (data: PreferencesFormData) => {
     try {
       await updateUserProfile(data);
+      updateTheme(data.theme);
       toast.success(t("profile.preferencesUpdated", "Preferences updated successfully"));
     } catch (error) {
       toast.error(extractAxiosError(error, "Failed to update preferences"));
@@ -476,25 +485,6 @@ export default function UserProfile() {
             />
             <CardContent>
               <form onSubmit={handleSubmitPreferences(onUpdatePreferences)} className="space-y-6 max-w-md">
-                {/* Language */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-text-primary flex items-center gap-2">
-                    <Globe className="h-4 w-4" />
-                    {t("profile.language", "Language")}
-                  </label>
-                  <select
-                    className="w-full px-3 py-2 border border-border rounded-lg bg-card text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    {...registerPreferences("language_preference")}
-                  >
-                    <option value="en">English</option>
-                    <option value="fa">فارسی (Farsi)</option>
-                    <option value="ps">پښتو (Pashto)</option>
-                  </select>
-                  {preferencesErrors.language_preference?.message && (
-                    <p className="text-sm text-error">{preferencesErrors.language_preference.message}</p>
-                  )}
-                </div>
-
                 {/* Theme */}
                 <div className="space-y-3">
                   <label className="text-sm font-medium text-text-primary flex items-center gap-2">
@@ -510,7 +500,7 @@ export default function UserProfile() {
                       <label
                         key={option.value}
                         className={`flex items-center justify-center gap-2 px-4 py-3 border rounded-lg cursor-pointer transition-colors ${
-                          userProfile.preferences?.theme === option.value
+                          selectedTheme === option.value
                             ? "border-primary bg-primary/10 text-primary"
                             : "border-border hover:border-primary/50"
                         }`}
@@ -522,7 +512,7 @@ export default function UserProfile() {
                           {...registerPreferences("theme")}
                         />
                         <span className="text-sm font-medium">{option.label}</span>
-                        {userProfile.preferences?.theme === option.value && (
+                        {selectedTheme === option.value && (
                           <Check className="h-4 w-4" />
                         )}
                       </label>
@@ -543,3 +533,4 @@ export default function UserProfile() {
     </div>
   );
 }
+

@@ -2,25 +2,28 @@ export type Theme = "light" | "dark" | "system";
 
 export const themes: Theme[] = ["light", "dark", "system"];
 
-export const setTheme = (theme: Theme) => {
-  let t = theme;
+export const resolveTheme = (theme: Theme): "light" | "dark" => {
   if (theme === "system") {
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    t = mediaQuery.matches ? "dark" : "light";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   }
-  document.documentElement.setAttribute("data-theme", t);
-  return t;
+  return theme;
+};
+
+export const setTheme = (theme: Theme) => {
+  const resolvedTheme = resolveTheme(theme);
+  document.documentElement.setAttribute("data-theme", resolvedTheme);
+  document.documentElement.setAttribute("data-theme-preference", theme);
+  return resolvedTheme;
 };
 
 export const applyTheme = (theme: Theme) => {
-  const t = setTheme(theme);
-  localStorage.setItem("color-theme", t);
+  setTheme(theme);
+  localStorage.setItem("color-theme", theme);
 };
 
 export const getSavedTheme = (): Theme => {
   const saved = localStorage.getItem("color-theme") as Theme | null;
   if (saved && themes.includes(saved)) return saved;
 
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  return prefersDark ? "dark" : "light";
+  return "system";
 };

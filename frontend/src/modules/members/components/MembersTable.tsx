@@ -1,6 +1,5 @@
-import { format } from "date-fns";
-
 import { DataTable, type Column } from "@/components/ui";
+import { useSystemPreferenceFormatters } from "@/modules/settings/hooks";
 import MemberStatusBadge from "./MemberStatusBadge";
 import type { MemberListItem } from "../types/member";
 
@@ -15,6 +14,7 @@ export default function MembersTable({
   loading = false,
   onRowClick,
 }: MembersTableProps) {
+  const { formatDate } = useSystemPreferenceFormatters();
   const columns: Column<MemberListItem>[] = [
     {
       key: "member_code",
@@ -34,11 +34,23 @@ export default function MembersTable({
       header: "Phone",
     },
     {
+      key: "address",
+      label: "Address",
+      header: "Address",
+      render: (row) => row.address || "-",
+    },
+    {
+      key: "membership_plan_name",
+      label: "Plan",
+      header: "Plan",
+      render: (row) => row.membership_plan_name || "-",
+    },
+    {
       key: "join_date",
       label: "Join Date",
       header: "Join Date",
       sortable: true,
-      render: (row) => format(new Date(row.join_date), "yyyy-MM-dd"),
+      render: (row) => formatDate(row.join_date),
     },
     {
       key: "status",

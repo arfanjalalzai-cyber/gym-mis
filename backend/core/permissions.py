@@ -182,6 +182,15 @@ def permission_required(permission_module, permission_action):
 def _user_has_permission(user, permission_module, permission_action):
     """Check if user has specific permission through their roles"""
     from accounts.models import UserPermission, RolePermission  # Import here to avoid circular imports
+
+    def canonical_role_name(role_name):
+        normalized = (role_name or "").strip().lower()
+        if normalized == "receptionist":
+            return "manager"
+        if normalized == "viewer":
+            return "staff"
+        return normalized
+
     permission_actions = [permission_action, 'all']
     override = UserPermission.objects.filter(
         user=user,
@@ -189,17 +198,17 @@ def _user_has_permission(user, permission_module, permission_action):
         permission__action__in=permission_actions
     )
     if override.exists():
-        if override.count() > 1:
-            override = override.filter(permission_action='all')
+        all_override = override.filter(permission__action="all").first()
+        if all_override is not None:
+            return all_override.allow
         return override.first().allow
     try:
         # Get user's roles and check permissions
-        role_name = user.role_name
         return RolePermission.objects.filter(
-            role_name=role_name,
+            role_name=canonical_role_name(user.role_name),
             permission__module=permission_module,
             permission__action__in=permission_actions
         ).exists()
-    except:
+    except Exception:
         return False
         

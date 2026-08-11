@@ -85,38 +85,16 @@ class Settings(BaseModel):
 
 class Permission(models.Model):
     MODULES = [
-        ('users', 'Users'),
-        ('inventory', 'Inventory'),
-        ('sales', 'Sales'),
-        ('purchases', 'Purchases'),
-        ('customers', 'Customers'),
-        ('finance', 'Finance'),
-        ('reports', 'Reports'),
-        ('settings', 'Settings'),
-        # newly added
-        ("product_details", "Product Details"),
-        ("expense", "Expense"),
-        ("stock_and_warehouse", "Stock and Warehouse"),
-        ("currency", "Currency"),
-        ("units", "Units"),
-        ("discount", "Discount"),
-
-        # School MIS modules
-        ('students', 'Students'),
-        ('guardians', 'Guardians'),
-        ('teachers', 'Teachers'),
-        ('staff', 'Staff'),
-        ('classes', 'Classes'),
-        ('attendance', 'Attendance'),
-        ('grades', 'Grades'),
-        ('fees', 'Fees'),
-        ('library', 'Library'),
-        ('exam', 'Exam'),
-        ('members', 'Members'),
-
-        # ('vendors', 'Vendors'),
-        # ("employees", "Employees"),
-
+        ("users", "Users"),
+        ("members", "Members"),
+        ("staff", "Staff"),
+        ("inventory", "Inventory"),
+        ("schedule", "Schedule"),
+        ("attendance", "Attendance"),
+        ("fees", "Payments and Billing"),
+        ("reports", "Reports"),
+        ("settings", "Settings"),
+        ("cards", "Cards"),
     ]
 
     action = models.CharField(max_length=100)

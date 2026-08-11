@@ -21,6 +21,11 @@ const appendValue = (formData: FormData, key: string, value: unknown) => {
     return;
   }
 
+  if (key === "assigned_class_ids" && Array.isArray(value)) {
+    formData.append(key, JSON.stringify(value));
+    return;
+  }
+
   if (typeof value === "number" || typeof value === "boolean") {
     formData.append(key, String(value));
     return;

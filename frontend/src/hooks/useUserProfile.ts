@@ -224,9 +224,6 @@ export const useUserProfile = (userId?: number) => {
       try {
         const updateData: UpdateUserData = {};
         switch (key) {
-          case "language":
-            updateData.language_preference = value;
-            break;
           case "timezone":
             updateData.timezone = value;
             break;

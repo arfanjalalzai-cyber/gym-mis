@@ -46,10 +46,7 @@ class ActivityLogMiddleware(MiddlewareMixin):
             if path.startswith(ignored_path):
                 return False
         
-        # Only log authenticated requests with tenant
-        return (request.user.is_authenticated and 
-                hasattr(request, 'tenant') and 
-                request.tenant)
+        return request.user.is_authenticated
     
     def _log_activity(self, request, response):
         """Create activity log entry."""
@@ -62,11 +59,10 @@ class ActivityLogMiddleware(MiddlewareMixin):
             ip_address = self._get_client_ip(request)
             
             ActivityLog.objects.create(
-                tenant=request.tenant,
                 user=request.user,
                 action=action,
-                object_type=object_type,
-                object_id=object_id,
+                table_name=object_type,
+                record_id=object_id,
                 ip_address=ip_address,
                 user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
             )
@@ -89,15 +85,17 @@ class ActivityLogMiddleware(MiddlewareMixin):
         parts = [p for p in path.split('/') if p]
         
         if len(parts) >= 2 and parts[0] == 'api':
-            object_type = parts[1].replace('-', '_').rstrip('s')  # Convert to singular
-            # Try to get object ID if present
+            object_type = parts[1].replace('-', '_')
+            if len(parts) >= 3:
+                object_type = f"{object_type}_{parts[2].replace('-', '_')}"
             object_id = None
-            if len(parts) >= 4:
+            for part in parts[2:]:
                 try:
-                    object_id = int(parts[3])
+                    object_id = int(part)
+                    break
                 except ValueError:
-                    pass
-            
+                    continue
+
             return object_type, object_id
         
         return 'unknown', None

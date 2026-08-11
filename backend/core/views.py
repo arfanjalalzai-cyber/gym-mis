@@ -1,147 +1,154 @@
-from rest_framework import viewsets, status
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
+from system_settings.models import GymProfileSettings, NotificationSettings
 
-from .models import (
-    Settings
-)
-from .serializers import (
-    EmailSettingsSerializer, ShopSettingsSerializer
-)
-from .permissions import (
-    
-    CanAccessSettings, PermissionMixin
-)
+from .permissions import CanAccessSettings, PermissionMixin
 
 
 class SettingsViewSet(PermissionMixin, viewsets.ViewSet):
+    """Legacy compatibility wrapper around system_settings endpoints."""
+
     permission_classes = [IsAuthenticated, CanAccessSettings]
-    
-    @action(detail=False, methods=['get', 'put'], url_path='shop')
+
+    @action(detail=False, methods=["get", "put"], url_path="shop")
     def shop_settings(self, request):
-        """
-        GET or PUT /api/settings/shop/
-        """
-        keys = ['shop_name', 'phone_number', 'contact_email', 'address']
+        gym = GymProfileSettings.get_solo()
 
-        if request.method == 'GET':
-            settings = Settings.objects.filter(setting_key__in=keys)
-            data = {key: "" for key in keys}
-            for s in settings:
-                data[s.setting_key] = s.get_typed_value()
-            return Response(data)
-        
-        
-        serializer = ShopSettingsSerializer(
-            data=request.data,
-            
+        if request.method == "GET":
+            return Response(
+                {
+                    "shop_name": gym.gym_name,
+                    "phone_number": gym.phone_number,
+                    "contact_email": gym.email,
+                    "address": gym.address,
+                }
+            )
+
+        gym.gym_name = request.data.get("shop_name", gym.gym_name or "")
+        gym.phone_number = request.data.get("phone_number", gym.phone_number or "")
+        gym.email = request.data.get("contact_email", gym.email or "")
+        gym.address = request.data.get("address", gym.address or "")
+        gym.save(update_fields=["gym_name", "phone_number", "email", "address", "updated_at"])
+
+        return Response(
+            {
+                "shop_name": gym.gym_name,
+                "phone_number": gym.phone_number,
+                "contact_email": gym.email,
+                "address": gym.address,
+            },
+            status=status.HTTP_200_OK,
         )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
-    @action(detail=False, methods=['get', 'put'], url_path='email')
+
+    @action(detail=False, methods=["get", "put"], url_path="email")
     def email_settings(self, request):
-        """
-        GET or PUT /api/settings/email/
-        """
-        keys = ['smtp_host', 'smtp_port', 'smtp_username', 'smtp_password', 'from_email']
+        notification = NotificationSettings.get_solo()
 
-        if request.method == 'GET':
-            settings = Settings.objects.filter(setting_key__in=keys)
-            data = {key: "" for key in keys}
-            for s in settings:
-                data[s.setting_key] = s.get_typed_value()
-            # Never return smtp_password if you want security
-            data['smtp_password'] = None
-            return Response(data)
+        if request.method == "GET":
+            return Response(
+                {
+                    "smtp_host": notification.smtp_host,
+                    "smtp_port": notification.smtp_port,
+                    "smtp_username": notification.smtp_username,
+                    "smtp_password": None,
+                    "from_email": notification.from_email,
+                }
+            )
 
-        serializer = EmailSettingsSerializer(
-            data=request.data,
+        notification.smtp_host = request.data.get("smtp_host", notification.smtp_host or "")
+        notification.smtp_port = request.data.get("smtp_port", notification.smtp_port or 587)
+        notification.smtp_username = request.data.get("smtp_username", notification.smtp_username or "")
+        smtp_password = request.data.get("smtp_password")
+        if smtp_password not in [None, ""]:
+            notification.smtp_password_encrypted = smtp_password
+        notification.from_email = request.data.get("from_email", notification.from_email or "")
+        notification.email_enabled = bool(notification.smtp_host and notification.from_email)
+        notification.save(
+            update_fields=[
+                "smtp_host",
+                "smtp_port",
+                "smtp_username",
+                "smtp_password_encrypted",
+                "from_email",
+                "email_enabled",
+                "updated_at",
+            ]
         )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
-    @action(detail=False, methods=['get', 'put'], url_path='logo', parser_classes=[MultiPartParser])
+
+        return Response(
+            {
+                "smtp_host": notification.smtp_host,
+                "smtp_port": notification.smtp_port,
+                "smtp_username": notification.smtp_username,
+                "smtp_password": None,
+                "from_email": notification.from_email,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=False, methods=["get", "put"], url_path="logo", parser_classes=[MultiPartParser])
     def logo_settings(self, request):
-        """
-        GET /api/settings/logo/     → Get current logo URL
-        PUT /api/settings/logo/     → Upload or update logo image
-        """
-        key = 'shop_logo'
-        shop_key = "shop_name"
-        if request.method == 'GET':
-            try:
-                setting = Settings.objects.get(setting_key=key, setting_type='image')
-                shop_name = Settings.objects.get(setting_key=shop_key)
-                logo_url = request.build_absolute_uri(setting.get_typed_value())
-                return Response({'logo': logo_url, 'shop_name': shop_name.get_typed_value()}, status=200)
-            except Settings.DoesNotExist:
-                return Response({'logo': None, 'shop_name': ''}, status=200)
+        gym = GymProfileSettings.get_solo()
 
-        # PUT logic: handle file upload
-        file = request.FILES.get('logo')
+        if request.method == "GET":
+            if gym.gym_logo:
+                logo_url = request.build_absolute_uri(gym.gym_logo.url)
+            else:
+                logo_url = None
+            return Response({"logo": logo_url, "shop_name": gym.gym_name}, status=200)
+
+        file = request.FILES.get("logo")
         if not file:
-            return Response({'error': 'No file uploaded'}, status=400)
+            return Response({"error": "No file uploaded"}, status=400)
 
-        setting, created = Settings.objects.get_or_create(
-            setting_key=key,
-            defaults={
-                'setting_type': 'image',
-                'category': 'branding',
-                'description': 'Shop logo',
-            }
-        )
+        gym.gym_logo = file
+        gym.save(update_fields=["gym_logo", "updated_at"])
+        logo_url = request.build_absolute_uri(gym.gym_logo.url)
+        return Response({"logo": logo_url}, status=200)
 
-        setting.setting_image = file
-        setting.save()
-        logo_url = request.build_absolute_uri(setting.get_typed_value())
 
-        return Response({'logo': logo_url}, status=200)
-
-      
-from rest_framework.views import APIView
 class InitializeView(PermissionMixin, APIView):
     def get(self, request):
         return Response(_get_initial_data(request))
-    
-    
+
+
 def _get_initial_data(request):
-    
-    return {
-        "settings": _get_settings(request)
-    }
+    return {"settings": _get_settings(request)}
+
 
 def _get_settings(request):
-    
-    keys = ['smtp_host', 'smtp_port', 'smtp_username', 'smtp_password', 'from_email']
-    settings = Settings.objects.filter(setting_key__in=keys)
-    email_settings = {key: "" for key in keys}
-    for s in settings:
-        email_settings[s.setting_key] = s.get_typed_value()
-    # Never return smtp_password if you want security
-    email_settings['smtp_password'] = None
-    key = 'shop_logo'
-    try:
-        setting = Settings.objects.get(setting_key=key, setting_type='image')
-        logo_url = request.build_absolute_uri(setting.get_typed_value())
-        logo_settings = {'logo': logo_url}
-    except Settings.DoesNotExist:
-        logo_settings = {'logo': None}
+    gym = GymProfileSettings.get_solo()
+    notification = NotificationSettings.get_solo()
 
-    keys = ['shop_name', 'phone_number', 'contact_email', 'address']
+    if gym.gym_logo:
+        logo_url = request.build_absolute_uri(gym.gym_logo.url)
+    else:
+        logo_url = None
 
-    settings = Settings.objects.filter(setting_key__in=keys)
-    shop_settings = {key: "" for key in keys}
-    for s in settings:
-        shop_settings[s.setting_key] = s.get_typed_value()
+    if gym.login_page_image:
+        login_page_image_url = request.build_absolute_uri(gym.login_page_image.url)
+    else:
+        login_page_image_url = None
 
     return {
-        "shop_settings": shop_settings,
-        "logo_settings": logo_settings,
-        "email_settings": email_settings
+        "shop_settings": {
+            "shop_name": gym.gym_name,
+            "phone_number": gym.phone_number,
+            "contact_email": gym.email,
+            "address": gym.address,
+        },
+        "logo_settings": {"logo": logo_url},
+        "login_page_image_settings": {"login_page_image": login_page_image_url},
+        "email_settings": {
+            "smtp_host": notification.smtp_host,
+            "smtp_port": notification.smtp_port,
+            "smtp_username": notification.smtp_username,
+            "smtp_password": None,
+            "from_email": notification.from_email,
+        },
     }

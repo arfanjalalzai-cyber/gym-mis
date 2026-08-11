@@ -48,7 +48,7 @@ export default function StaffListPage() {
     <div className="space-y-6">
       <PageHeader
         title="Staff"
-        subtitle="Manage trainers, managers, clerks and other staff"
+        subtitle="Manage trainers, managers and other staff"
         actions={[
           {
             label: "Add Staff",

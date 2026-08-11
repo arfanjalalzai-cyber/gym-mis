@@ -13,7 +13,7 @@ export const setAccessToken = (token: string): void => {
   sessionStorage.setItem("accessToken", token);
 };
 
-const clearAccessToken = (): void => {
+export const clearAccessToken = (): void => {
   sessionStorage.removeItem("accessToken");
 };
 

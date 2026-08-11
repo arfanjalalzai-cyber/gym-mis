@@ -32,7 +32,7 @@ export default function StaffSearchFilters({
     <div className="rounded-xl border border-border bg-card p-4">
       <div className="flex flex-col gap-4">
         <Input
-          placeholder="Search by code, name, mobile or email"
+          placeholder="Search by code, name, mobile, address or email"
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
           leftIcon={<Search className="h-4 w-4" />}
@@ -52,7 +52,6 @@ export default function StaffSearchFilters({
             >
               <option value="all">All Positions</option>
               <option value="trainer">Trainer</option>
-              <option value="clerk">Clerk</option>
               <option value="manager">Manager</option>
               <option value="cleaner">Cleaner</option>
               <option value="other">Other</option>

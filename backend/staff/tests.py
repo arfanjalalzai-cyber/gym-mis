@@ -15,7 +15,7 @@ from .serializers import StaffDetailSerializer, StaffWriteSerializer
 class StaffModelTests(APITestCase):
     def test_staff_code_auto_generation(self):
         staff1 = Staff.objects.create(
-            position="clerk",
+            position="manager",
             first_name="Ali",
             last_name="One",
             mobile_number="0700000001",
@@ -72,7 +72,7 @@ class StaffSerializerTests(APITestCase):
     def test_age_computation(self):
         dob = date(1996, 1, 15)
         staff = Staff.objects.create(
-            position="clerk",
+            position="manager",
             first_name="Age",
             last_name="Check",
             mobile_number="0700000003",
@@ -92,7 +92,7 @@ class StaffSerializerTests(APITestCase):
         future_date = (date.today() + timedelta(days=1)).isoformat()
         serializer = StaffWriteSerializer(
             data={
-                "position": "clerk",
+                "position": "manager",
                 "first_name": "Invalid",
                 "last_name": "Salary",
                 "mobile_number": "0700000004",
@@ -220,19 +220,19 @@ class StaffAPITests(APITestCase):
         detail_url = reverse("staff:staff-detail", kwargs={"pk": self.staff.id})
         response = self.client.patch(
             detail_url,
-            {"last_name": "Updated", "position": "clerk"},
+            {"last_name": "Updated", "position": "manager"},
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.staff.refresh_from_db()
         self.assertEqual(self.staff.last_name, "Updated")
-        self.assertEqual(self.staff.position, "clerk")
+        self.assertEqual(self.staff.position, "manager")
         self.assertFalse(Trainer.objects.filter(staff=self.staff).exists())
 
     def test_switch_to_trainer_creates_profile(self):
         self.client.force_authenticate(user=self.receptionist_user)
         staff = Staff.objects.create(
-            position="clerk",
+            position="manager",
             first_name="Role",
             last_name="Switch",
             mobile_number="0700000999",
@@ -255,7 +255,7 @@ class StaffAPITests(APITestCase):
         create_response = self.client.post(
             self.list_url,
             {
-                "position": "clerk",
+                "position": "manager",
                 "first_name": "Blocked",
                 "last_name": "Staff",
                 "mobile_number": "0777777777",

@@ -50,7 +50,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
   handleGoHome = () => {
     this.handleReset();
-    window.location.href = "/mis";
+    window.location.href = "/";
   };
 
   handleReload = () => {
@@ -128,7 +128,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
             <p className="mt-8 text-sm text-text-secondary">
               If the problem persists, please{" "}
               <a
-                href="mailto:support@school.edu"
+                href="mailto:support@gymmis.local"
                 className="text-primary hover:underline"
               >
                 contact support

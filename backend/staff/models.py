@@ -17,7 +17,6 @@ class Staff(BaseModel):
 
     POSITION_CHOICES = [
         ("trainer", "Trainer"),
-        ("clerk", "Clerk"),
         ("manager", "Manager"),
         ("cleaner", "Cleaner"),
         ("other", "Other"),
@@ -46,6 +45,7 @@ class Staff(BaseModel):
     father_name = models.CharField(max_length=120, blank=True, null=True)
     mobile_number = models.CharField(max_length=20)
     whatsapp_number = models.CharField(max_length=20, blank=True, null=True)
+    address = models.TextField(blank=True, default="")
     email = models.EmailField(blank=True, null=True)
     blood_group = models.CharField(max_length=5, choices=BLOOD_GROUP_CHOICES, blank=True, null=True)
     profile_picture = models.ImageField(upload_to="staff/profile_pictures/", blank=True, null=True)
@@ -107,6 +107,11 @@ class Staff(BaseModel):
 class Trainer(BaseModel):
     staff = models.OneToOneField(Staff, on_delete=models.CASCADE, related_name="trainer_profile")
     trainer_code = models.CharField(max_length=10, unique=True, db_index=True, editable=False)
+    assigned_classes = models.ManyToManyField(
+        "schedule.ScheduleClass",
+        related_name="assigned_trainers",
+        blank=True,
+    )
 
     class Meta:
         db_table = "staff_trainers"

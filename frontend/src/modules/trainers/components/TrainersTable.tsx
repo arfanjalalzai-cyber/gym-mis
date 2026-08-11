@@ -1,6 +1,5 @@
-import { format } from "date-fns";
-
 import { DataTable, type Column } from "@/components/ui";
+import { useSystemPreferenceFormatters } from "@/modules/settings/hooks";
 import TrainerEmploymentStatusBadge from "./TrainerEmploymentStatusBadge";
 import TrainerSalaryStatusBadge from "./TrainerSalaryStatusBadge";
 import type { TrainerListItem } from "../types/trainer";
@@ -16,6 +15,7 @@ export default function TrainersTable({
   loading = false,
   onRowClick,
 }: TrainersTableProps) {
+  const { formatDate } = useSystemPreferenceFormatters();
   const columns: Column<TrainerListItem>[] = [
     {
       key: "trainer_code",
@@ -39,7 +39,7 @@ export default function TrainersTable({
       label: "Date Hired",
       header: "Date Hired",
       sortable: true,
-      render: (row) => format(new Date(row.date_hired), "yyyy-MM-dd"),
+      render: (row) => formatDate(row.date_hired),
     },
     {
       key: "employment_status",

@@ -112,8 +112,8 @@ export default function SidebarItem({
               isCollapsed ? "justify-center" : ""
             } ${
               isActive && !hasSubItems
-                ? "bg-gradient-to-r from-primary to-primary-dark text-white shadow-lg shadow-primary/30"
-                : "text-slate-300 hover:bg-white/10 hover:text-white active:scale-[0.98]"
+                ? "bg-gradient-to-r from-primary to-secondary text-white shadow-lg shadow-primary/30"
+                : "text-auth-muted hover:bg-white/10 hover:text-white active:scale-[0.98]"
             }`
           }
         >
@@ -132,7 +132,7 @@ export default function SidebarItem({
         {isCollapsed && hasSubItems && showPopover && (
           <div
             ref={popoverRef}
-            className="fixed left-20 z-50 min-w-[200px] rounded-xl border border-white/10 bg-slate-900 shadow-2xl"
+            className="fixed left-20 z-50 min-w-[200px] rounded-xl border border-white/10 bg-auth-card shadow-2xl"
             style={{
               top: buttonRef.current?.getBoundingClientRect().top || 0,
             }}
@@ -150,7 +150,7 @@ export default function SidebarItem({
                       `flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-150 ${
                         isActive
                           ? "bg-primary/20 text-primary"
-                          : "text-slate-300 hover:bg-white/5 hover:text-white"
+                          : "text-auth-muted hover:bg-white/5 hover:text-white"
                       }`
                     }
                   >
@@ -174,7 +174,7 @@ export default function SidebarItem({
                               `flex items-center gap-2 rounded-md px-3 py-1.5 text-xs transition-all duration-150 ${
                                 isActive
                                   ? "text-primary font-semibold"
-                                  : "text-slate-400 hover:text-white"
+                                  : "text-auth-muted hover:text-white"
                               }`
                             }
                           >
@@ -202,7 +202,7 @@ export default function SidebarItem({
                     `flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-150 ${
                       isActive
                         ? "bg-primary/20 text-primary border-l-2 border-primary -ml-[2px] pl-[10px] shadow-sm"
-                        : "text-slate-400 hover:bg-white/5 hover:text-white hover:pl-1"
+                        : "text-auth-muted hover:bg-white/5 hover:text-white hover:pl-1"
                     }`
                   }
                 >
@@ -226,7 +226,7 @@ export default function SidebarItem({
                             `flex items-center gap-2 rounded-md px-3 py-1.5 text-xs transition-all duration-150 ${
                               isActive
                                 ? "text-primary font-semibold"
-                                : "text-slate-500 hover:text-white hover:bg-white/5"
+                                : "text-auth-muted hover:text-white hover:bg-white/5"
                             }`
                           }
                         >

@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Lock, Mail, Clock } from "lucide-react";
 import Alert from "@/components/ui/Alert";
 
 interface AccountLockedMessageProps {
   lockedUntil: string;
+  onUnlocked?: () => void;
 }
 
 /**
@@ -15,15 +17,29 @@ interface AccountLockedMessageProps {
  */
 export default function AccountLockedMessage({
   lockedUntil,
+  onUnlocked,
 }: AccountLockedMessageProps) {
   const { t } = useTranslation();
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   // Calculate time remaining
   const unlockTime = new Date(lockedUntil);
-  const now = new Date();
-  const minutesRemaining = Math.ceil(
-    (unlockTime.getTime() - now.getTime()) / (1000 * 60)
+  const remainingMs = unlockTime.getTime() - now.getTime();
+  const minutesRemaining = Math.max(
+    0,
+    Math.ceil(remainingMs / (1000 * 60))
   );
+
+  useEffect(() => {
+    if (remainingMs <= 0) {
+      onUnlocked?.();
+    }
+  }, [remainingMs, onUnlocked]);
 
   return (
     <Alert variant="error" className="space-y-3">
@@ -46,11 +62,17 @@ export default function AccountLockedMessage({
           <div className="flex items-center gap-2 text-sm font-medium">
             <Clock className="h-4 w-4" />
             <span>
-              {t(
-                "auth.tryAgainIn",
-                "Try again in {minutes} minutes",
-                { minutes: minutesRemaining }
-              )}
+              {minutesRemaining > 0
+                ? t(
+                    minutesRemaining === 1
+                      ? "auth.tryAgainInOne"
+                      : "auth.tryAgainIn",
+                    minutesRemaining === 1
+                      ? "Try again in {{count}} minute"
+                      : "Try again in {{count}} minutes",
+                    { count: minutesRemaining }
+                  )
+                : t("auth.tryAgainNow", "You can try signing in now.")}
             </span>
           </div>
 

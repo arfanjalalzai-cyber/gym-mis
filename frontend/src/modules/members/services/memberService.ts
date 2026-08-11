@@ -1,13 +1,21 @@
 import apiClient from "@/lib/api";
 import type {
   Member,
+  MemberBodyMetricHistoryItem,
   MemberFormValues,
   MemberListParams,
   PaginatedMembersResponse,
 } from "../types/member";
 
 const appendValue = (formData: FormData, key: string, value: unknown) => {
-  if (value === undefined || value === null) return;
+  if (value === undefined) return;
+
+  if (value === null) {
+    if (key === "membership_plan_template" || key === "schedule_class" || key === "schedule_slot") {
+      formData.append(key, "");
+    }
+    return;
+  }
 
   if (key === "profile_picture") {
     if (value instanceof FileList) {
@@ -49,6 +57,9 @@ export const memberService = {
 
   getMember: (id: number) =>
     apiClient.get<Member>(`/members/members/${id}/`),
+
+  getMemberBodyMetricHistory: (id: number) =>
+    apiClient.get<MemberBodyMetricHistoryItem[]>(`/members/members/${id}/body-metrics/history/`),
 
   createMember: (data: MemberFormValues) =>
     apiClient.post<Member>("/members/members/", toMemberFormData(data)),

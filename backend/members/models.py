@@ -34,6 +34,7 @@ class Member(BaseModel):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     phone = models.CharField(max_length=20)
+    address = models.TextField(blank=True, default="")
     email = models.EmailField(blank=True, null=True)
     blood_group = models.CharField(max_length=5, choices=BLOOD_GROUP_CHOICES, blank=True, null=True)
     profile_picture = models.ImageField(upload_to="members/profile_pictures/", blank=True, null=True)
@@ -44,6 +45,27 @@ class Member(BaseModel):
     height_cm = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
     weight_kg = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     join_date = models.DateField(default=date.today)
+    membership_plan_template = models.ForeignKey(
+        "system_settings.MembershipPlanTemplate",
+        on_delete=models.SET_NULL,
+        related_name="members",
+        blank=True,
+        null=True,
+    )
+    schedule_class = models.ForeignKey(
+        "schedule.ScheduleClass",
+        on_delete=models.SET_NULL,
+        related_name="members",
+        blank=True,
+        null=True,
+    )
+    schedule_slot = models.ForeignKey(
+        "schedule.ScheduleSlot",
+        on_delete=models.SET_NULL,
+        related_name="scheduled_members",
+        blank=True,
+        null=True,
+    )
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="active")
     notes = models.TextField(blank=True, null=True)
 
@@ -54,6 +76,8 @@ class Member(BaseModel):
             models.Index(fields=["status"]),
             models.Index(fields=["phone"]),
             models.Index(fields=["last_name"]),
+            models.Index(fields=["schedule_class"]),
+            models.Index(fields=["schedule_slot"]),
             models.Index(fields=["created_at"]),
         ]
 
@@ -85,4 +109,33 @@ class Member(BaseModel):
     def save(self, *args, **kwargs):
         if not self.member_code:
             self.member_code = self.generate_member_code()
+        if self.schedule_slot_id:
+            self.schedule_class = self.schedule_slot.schedule_class
         super().save(*args, **kwargs)
+
+
+class MemberBodyMetricHistory(BaseModel):
+    BMI_CATEGORY_CHOICES = [
+        ("underweight", "Underweight"),
+        ("normal", "Normal"),
+        ("overweight", "Overweight"),
+        ("obese", "Obese"),
+    ]
+
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="body_metric_history")
+    measurement_date = models.DateField(default=date.today, db_index=True)
+    height_cm = models.DecimalField(max_digits=5, decimal_places=2)
+    weight_kg = models.DecimalField(max_digits=6, decimal_places=2)
+    bmi = models.DecimalField(max_digits=4, decimal_places=1)
+    bmi_category = models.CharField(max_length=20, choices=BMI_CATEGORY_CHOICES)
+
+    class Meta:
+        db_table = "member_body_metric_history"
+        indexes = [
+            models.Index(fields=["member", "-measurement_date"]),
+            models.Index(fields=["created_at"]),
+        ]
+        ordering = ["-measurement_date", "-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.member.member_code} - {self.measurement_date} - BMI {self.bmi}"

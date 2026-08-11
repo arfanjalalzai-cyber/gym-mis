@@ -16,12 +16,12 @@ export default function RouteBox({ items, routlength }: RouteProps) {
       className="
       flex  items-center
        mb-3 p-3 sm:p-4
-      bg-gradient-to-r from-green-500 to-emerald-600
+      bg-gradient-to-r from-primary to-secondary
       rounded-sm shadow-md
       text-white font-semibold text-sm
       whitespace-nowrap
       min-w-0
-      border border-green-400
+      border border-primary/40
     "
     >
       {/* Home Icon */}
@@ -38,7 +38,7 @@ export default function RouteBox({ items, routlength }: RouteProps) {
         "
         aria-label="Go to Home"
       >
-        <FaHome className="size-5 text-gray-400" />
+        <FaHome className="size-5 text-white" />
       </Link>
 
       {/* Initial Separator */}
@@ -62,7 +62,7 @@ export default function RouteBox({ items, routlength }: RouteProps) {
               border border-white border-opacity-30
             "
           >
-            <span className="t text-gray-400">{routeitem.name}</span>
+            <span className="t text-white">{routeitem.name}</span>
           </Link>
 
           {/* Separator between items, not after the last one */}

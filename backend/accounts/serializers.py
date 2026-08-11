@@ -1,8 +1,35 @@
+import re
+
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from .models import ROLE_CHOICES, ActivityLog, User, RolePermission
 # serializers.py
+
+ROLE_ALIASES = {
+    "receptionist": "manager",
+    "viewer": "staff",
+}
+AFGHAN_MOBILE_PATTERN = re.compile(r"^07\d{8}$")
+
+
+def normalize_role_name(role_name: str) -> str:
+    role_name = (role_name or "").strip().lower()
+    return ROLE_ALIASES.get(role_name, role_name)
+
+
+def role_name_variants(role_name: str) -> set[str]:
+    normalized = normalize_role_name(role_name)
+    return {normalized}
+
+
+def validate_afghan_mobile_number(value: str | None) -> str | None:
+    if value in (None, ""):
+        return value
+    normalized = value.strip()
+    if not AFGHAN_MOBILE_PATTERN.fullmatch(normalized):
+        raise serializers.ValidationError("Phone must be exactly 10 digits and start with 07.")
+    return normalized
 
 
 class LoginSerializer(serializers.Serializer):
@@ -42,7 +69,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'first_name', 'last_name', 'username', 'email', 'phone',
             'role_name', 'permissions',
-            'language_preference',
             'theme', 'is_active', 'last_login',
             'profile_picture', 'profile_picture_url',
         ]
@@ -63,8 +89,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
         
         # Get permissions from role
         if obj.role_name:
-            role_name = obj.role_name
-            role_permissions = RolePermission.objects.filter(role_name=role_name)
+            role_permissions = RolePermission.objects.filter(
+                role_name__in=role_name_variants(obj.role_name)
+            )
             
             for rp in role_permissions:
                 permissions.add(rp.permission.module)
@@ -90,11 +117,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'username': data['username'],
             'email': data['email'],
             'phone': data['phone'],
-            'role': data['role_name'] if data['role_name'] else None,
+            'role': normalize_role_name(data['role_name']) if data['role_name'] else None,
             'avatarUrl': data['profile_picture_url'],
             'permissions': data['permissions'],
             'preferences': {
-                'language': data['language_preference'],
                 'theme': data['theme']
             }
         }
@@ -102,15 +128,19 @@ class UserProfileSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         # Handle role update
         if 'role_name' in validated_data:
-            role_name = validated_data.pop('role_name')
+            role_name = normalize_role_name(validated_data.pop('role_name'))
+            valid_roles = {choice[0] for choice in ROLE_CHOICES}
             if role_name:
-                if role_name in ROLE_CHOICES:
+                if role_name in valid_roles:
                     instance.role_name = role_name
                 else:
                     raise serializers.ValidationError({'role_name': 'Invalid role Name'})
         
         
         return super().update(instance, validated_data)
+
+    def validate_phone(self, value):
+        return validate_afghan_mobile_number(value)
 
 
 class UserListSerializer(serializers.ModelSerializer):
@@ -147,14 +177,14 @@ class CreateUserSerializer(serializers.ModelSerializer):
         return value
 
     def validate_role_name(self, role_name):
-        if role_name == 'admin':
-            raise serializers.ValidationError("Invalid Role Name")
-        for role in ROLE_CHOICES:
-            if role_name == role[0]:
-                break
-        else:
+        role_name = normalize_role_name(role_name)
+        valid_roles = {choice[0] for choice in ROLE_CHOICES}
+        if role_name not in valid_roles:
             raise serializers.ValidationError("Invalid Role Name")
         return role_name
+
+    def validate_phone(self, value):
+        return validate_afghan_mobile_number(value)
 
     def create(self, validated_data):
         import secrets
@@ -184,7 +214,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
             user.save(update_fields=['email_verification_token', 'email_verification_sent_at', 'email_verified'])
 
             # Send verification email
-            verification_url = f"{settings.FRONTEND_URL}/mis/auth/verify-email/{token}"
+            verification_url = f"{settings.FRONTEND_URL}/auth/verify-email/{token}"
             context = {
                 'user': user,
                 'verification_url': verification_url,
@@ -196,7 +226,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
                 text_content = f'Welcome! Click the link below to verify your email:\n\n{verification_url}\n\nThis link will expire in 24 hours.'
 
                 email_msg = EmailMultiAlternatives(
-                    subject='Welcome to School MIS - Verify Your Email',
+                    subject='Welcome to Gym MIS - Verify Your Email',
                     body=text_content,
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     to=[user.email]
@@ -211,6 +241,88 @@ class CreateUserSerializer(serializers.ModelSerializer):
             user.email_verified = True
             user.save(update_fields=['email_verified'])
 
+        return user
+
+
+class SignUpSerializer(serializers.ModelSerializer):
+    """Serializer for admin-created user accounts."""
+
+    password = serializers.CharField(write_only=True, validators=[validate_password])
+    confirm_password = serializers.CharField(write_only=True)
+    admin_password = serializers.CharField(write_only=True, style={"input_type": "password"})
+    profile_picture = serializers.ImageField(required=False, allow_null=True)
+
+    class Meta:
+        model = User
+        fields = [
+            "first_name",
+            "last_name",
+            "username",
+            "email",
+            "phone",
+            "profile_picture",
+            "password",
+            "confirm_password",
+            "admin_password",
+            "role_name",
+        ]
+        extra_kwargs = {
+            "first_name": {"required": True, "allow_blank": False},
+            "last_name": {"required": True, "allow_blank": False},
+            "username": {"required": True, "allow_blank": False},
+            "email": {"required": True, "allow_blank": False},
+            "phone": {"required": False, "allow_blank": True, "allow_null": True},
+            "role_name": {"required": True, "allow_blank": False},
+        }
+
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("Username already exists")
+        return value
+
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Email already exists")
+        return value
+
+    def validate_phone(self, value):
+        return validate_afghan_mobile_number(value)
+
+    def validate_role_name(self, role_name):
+        role_name = normalize_role_name(role_name)
+        valid_roles = {choice[0] for choice in ROLE_CHOICES}
+        if role_name not in valid_roles:
+            raise serializers.ValidationError("Invalid Role Name")
+        return role_name
+
+    def validate(self, attrs):
+        if attrs.get("password") != attrs.get("confirm_password"):
+            raise serializers.ValidationError(
+                {"confirm_password": "Passwords do not match"}
+            )
+
+        request = self.context.get("request")
+        admin_user = getattr(request, "user", None)
+        admin_password = attrs.get("admin_password")
+        if not admin_user or not admin_user.check_password(admin_password):
+            raise serializers.ValidationError(
+                {"admin_password": "Admin password is incorrect"}
+            )
+        return attrs
+
+    def create(self, validated_data):
+        validated_data.pop("confirm_password", None)
+        validated_data.pop("admin_password", None)
+        password = validated_data.pop("password")
+        role_name = validated_data.pop("role_name")
+
+        user = User.objects.create_user(
+            password=password,
+            role_name=role_name,
+            **validated_data,
+        )
+        user.email_verified = True
+        user.save(update_fields=["email_verified"])
         return user
 
 

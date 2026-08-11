@@ -13,7 +13,6 @@ export interface UserProfile {
   };
   permissions: string[];
   preferences: {
-    language: string;
     timezone: string;
     currency: string;
     theme: "light" | "dark" | "system";

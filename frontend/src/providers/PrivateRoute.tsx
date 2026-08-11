@@ -1,8 +1,8 @@
 // components/PrivateRoute.tsx
 import React from "react";
 import { Navigate } from "react-router-dom";
-import { Spinner } from "../components/Loader";
-import { useAuth } from "../hooks/useAuth";
+import { Spinner } from "@/components/Loader";
+import { useAuth } from "@/modules/auth/hooks/useAuth";
 
 interface PrivateRouteProps {
   children: React.ReactNode;
@@ -19,7 +19,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
     );
   }
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/auth/login" replace />;
   }
 
   return <>{children}</>;

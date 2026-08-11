@@ -1,6 +1,5 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import { Upload, X, File } from "lucide-react";
-import Button from "./Button";
 
 export interface FileUploadProps {
   accept?: string;
@@ -32,11 +31,10 @@ export default function FileUpload({
 
     const filesArray = Array.from(newFiles);
     const validFiles: File[] = [];
-    const errors: string[] = [];
 
     filesArray.forEach((file) => {
       if (maxSize && file.size > maxSize) {
-        errors.push(`${file.name} exceeds maximum size`);
+        return;
       } else {
         validFiles.push(file);
       }

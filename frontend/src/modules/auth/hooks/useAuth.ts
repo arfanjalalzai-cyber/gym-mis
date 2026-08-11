@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useUserStore } from '@/modules/auth/stores/useUserStore';
-import { getAccessToken } from '@/lib/api';
+import { getAccessToken, clearAccessToken } from '@/lib/api';
 
 export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -10,20 +10,18 @@ export const useAuth = () => {
   useEffect(() => {
     const initializeAuth = async () => {
       const token = getAccessToken();
-      if (!token) {
-        setIsAuthenticated(false);
-        setIsLoading(false);
-        reset();
-        return;
-      }
-
       try {
-        // If we have a token, try to fetch user profile
+        if (!token) {
+          setIsAuthenticated(false);
+          reset();
+          return;
+        }
+
         await fetchUserProfile();
         setIsAuthenticated(true);
       } catch {
-        // Token might be invalid, clear it
-        sessionStorage.removeItem('accessToken');
+        // Token/cookie might be invalid, clear local auth state.
+        clearAccessToken();
         setIsAuthenticated(false);
         reset();
       } finally {

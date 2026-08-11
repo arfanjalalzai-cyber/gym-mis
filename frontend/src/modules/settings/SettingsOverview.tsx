@@ -7,9 +7,9 @@ export default function SettingsOverview() {
   const navigate = useNavigate();
 
   const settingsCategories = [
-    { title: t("mis.settings.general", "General Settings"), icon: "pi pi-cog", path: "/mis/settings/general", description: t("mis.settings.generalDesc", "School information and basic configuration") },
+    { title: t("mis.settings.general", "General Settings"), icon: "pi pi-cog", path: "/mis/settings/general", description: t("mis.settings.generalDesc", "Gym information and basic configuration") },
     { title: t("mis.settings.userManagement", "User Management"), icon: "pi pi-users", path: "/mis/settings/users", description: t("mis.settings.userDesc", "Manage users, roles, and permissions") },
-    { title: t("mis.settings.academicYear", "Academic Year"), icon: "pi pi-calendar", path: "/mis/settings/academic-year", description: t("mis.settings.yearDesc", "Configure academic years and sessions") },
+    { title: t("mis.settings.systemPreferences", "System Preferences"), icon: "pi pi-sliders-h", path: "/settings/system-preferences", description: t("mis.settings.systemPrefsDesc", "Configure localization, formatting, and defaults") },
   ];
 
   return (

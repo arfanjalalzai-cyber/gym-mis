@@ -13,8 +13,8 @@ from .serializers import MemberDetailSerializer, MemberWriteSerializer
 
 class MemberModelTests(APITestCase):
     def test_member_code_auto_generation_and_default_status(self):
-        member1 = Member.objects.create(first_name="Ali", last_name="One", phone="111111")
-        member2 = Member.objects.create(first_name="Sara", last_name="Two", phone="222222")
+        member1 = Member.objects.create(first_name="Ali", last_name="One", phone="0700000001")
+        member2 = Member.objects.create(first_name="Sara", last_name="Two", phone="0700000002")
 
         self.assertTrue(member1.member_code.startswith("MEM-"))
         self.assertTrue(member2.member_code.startswith("MEM-"))
@@ -27,7 +27,7 @@ class MemberSerializerTests(APITestCase):
         member = Member.objects.create(
             first_name="BMI",
             last_name="Test",
-            phone="333333",
+            phone="0700000003",
             height_cm=Decimal("175"),
             weight_kg=Decimal("70"),
         )
@@ -40,7 +40,7 @@ class MemberSerializerTests(APITestCase):
             data={
                 "first_name": "Partial",
                 "last_name": "Input",
-                "phone": "444444",
+                "phone": "0700000004",
                 "height_cm": "175",
             }
         )
@@ -52,7 +52,7 @@ class MemberSerializerTests(APITestCase):
             data={
                 "first_name": "Bad",
                 "last_name": "Weight",
-                "phone": "555555",
+                "phone": "0700000005",
                 "height_cm": "175",
                 "weight_kg": "-3",
             }
@@ -108,7 +108,7 @@ class MemberAPITests(APITestCase):
         self.member = Member.objects.create(
             first_name="John",
             last_name="Doe",
-            phone="999999",
+            phone="0700000009",
             email="john@example.com",
             status="active",
             height_cm=Decimal("170"),
@@ -120,7 +120,7 @@ class MemberAPITests(APITestCase):
         payload = {
             "first_name": "New",
             "last_name": "Member",
-            "phone": "888888",
+            "phone": "0700000008",
             "id_card_number": "ID-12345",
             "blood_group": "O+",
             "status": "active",
@@ -149,7 +149,7 @@ class MemberAPITests(APITestCase):
             {
                 "first_name": "Blocked",
                 "last_name": "User",
-                "phone": "777777",
+                "phone": "0700000007",
                 "status": "active",
                 "join_date": "2026-02-20",
             },
@@ -164,7 +164,7 @@ class MemberAPITests(APITestCase):
         Member.objects.create(
             first_name="Jane",
             last_name="Smith",
-            phone="666666",
+            phone="0700000006",
             email="jane@example.com",
             status="inactive",
         )

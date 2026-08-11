@@ -4,6 +4,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   hint?: string;
+  helperText?: string;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
   fullWidth?: boolean;
@@ -15,6 +16,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       label,
       error,
       hint,
+      helperText,
       leftIcon,
       rightIcon,
       fullWidth = true,
@@ -67,8 +69,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         {error && (
           <p className="mt-1.5 text-sm text-error">{error}</p>
         )}
-        {hint && !error && (
-          <p className="mt-1.5 text-sm text-muted">{hint}</p>
+        {(helperText || hint) && !error && (
+          <p className="mt-1.5 text-sm text-muted">{helperText || hint}</p>
         )}
       </div>
     );

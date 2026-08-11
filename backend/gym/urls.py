@@ -25,6 +25,14 @@ urlpatterns = [
     path('api/accounts/', include('accounts.urls')),
     path('api/members/', include('members.urls')),
     path('api/staff/', include('staff.urls')),
+    path('api/inventory/', include('inventory.urls')),
+    path('api/schedule/', include('schedule.urls')),
+    path('api/payments/', include('payments.urls')),
+    path('api/billing/', include('billing.urls')),
+    path('api/attendance/', include('attendance.urls')),
+    path('api/reports/', include('reports.urls')),
+    path('api/cards/', include('cards.urls')),
+    path('api/settings/', include('system_settings.urls')),
 ]
 
 if settings.DEBUG:

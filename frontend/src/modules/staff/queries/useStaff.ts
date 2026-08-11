@@ -18,10 +18,11 @@ export const staffKeys = {
   detail: (id: number) => [...staffKeys.details(), id] as const,
 };
 
-export const useStaffList = (params?: StaffListParams) =>
+export const useStaffList = (params?: StaffListParams, options?: { enabled?: boolean }) =>
   useQuery<PaginatedStaffResponse>({
     queryKey: staffKeys.list(params),
     queryFn: () => staffService.getStaffList(params).then((res) => res.data),
+    enabled: options?.enabled ?? true,
   });
 
 export const useStaff = (id: number, options?: { enabled?: boolean }) =>
@@ -38,6 +39,7 @@ export const useCreateStaff = () => {
     onSuccess: () => {
       toast.success("Staff created successfully");
       queryClient.invalidateQueries({ queryKey: staffKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
     },
     onError: (error) => {
       toast.error(extractAxiosError(error, "Failed to create staff"));
@@ -54,6 +56,7 @@ export const useUpdateStaff = (id: number) => {
       toast.success("Staff updated successfully");
       queryClient.invalidateQueries({ queryKey: staffKeys.lists() });
       queryClient.invalidateQueries({ queryKey: staffKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
     },
     onError: (error) => {
       toast.error(extractAxiosError(error, "Failed to update staff"));
@@ -68,6 +71,7 @@ export const useDeleteStaff = () => {
     onSuccess: () => {
       toast.success("Staff deleted successfully");
       queryClient.invalidateQueries({ queryKey: staffKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
     },
     onError: (error) => {
       toast.error(extractAxiosError(error, "Failed to delete staff"));
@@ -83,6 +87,7 @@ export const useActivateStaff = (id: number) => {
       toast.success("Staff activated");
       queryClient.invalidateQueries({ queryKey: staffKeys.lists() });
       queryClient.invalidateQueries({ queryKey: staffKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
     },
     onError: (error) => {
       toast.error(extractAxiosError(error, "Failed to activate staff"));
@@ -98,10 +103,10 @@ export const useDeactivateStaff = (id: number) => {
       toast.success("Staff deactivated");
       queryClient.invalidateQueries({ queryKey: staffKeys.lists() });
       queryClient.invalidateQueries({ queryKey: staffKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
     },
     onError: (error) => {
       toast.error(extractAxiosError(error, "Failed to deactivate staff"));
     },
   });
 };
-

@@ -32,7 +32,6 @@ export type UserProfile = {
   location: number;
   permissions: Permission[];
   preferences: {
-    language: string;
     timezone: string;
     currency: string;
     theme: Theme;
@@ -47,7 +46,6 @@ export type CreateUserData = {
   password: string;
   role_name: RoleName;
   location_id: string;
-  language_preference?: string;
   timezone?: string;
   theme?: Theme;
 };
@@ -60,7 +58,6 @@ export type UpdateUserData = {
   phone?: string;
   location_id?: string;
   preferred_currency_id?: number;
-  language_preference?: string;
   timezone?: string;
   theme?: Theme;
 };

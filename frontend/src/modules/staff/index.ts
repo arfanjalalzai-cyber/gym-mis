@@ -1,6 +1,7 @@
 export { default as StaffListPage } from "./pages/StaffListPage";
 export { default as AddStaffPage } from "./pages/AddStaffPage";
 export { default as StaffProfilePage } from "./pages/StaffProfilePage";
+export { default as StaffSalaryBillDetailsPage } from "./pages/StaffSalaryBillDetailsPage";
 export { default as EditStaffPage } from "./pages/EditStaffPage";
 
 export { default as StaffForm } from "./components/StaffForm";

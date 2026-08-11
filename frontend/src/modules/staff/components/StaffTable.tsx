@@ -1,6 +1,5 @@
-import { format } from "date-fns";
-
 import { DataTable, type Column } from "@/components/ui";
+import { useSystemPreferenceFormatters } from "@/modules/settings/hooks";
 import StaffEmploymentStatusBadge from "./StaffEmploymentStatusBadge";
 import StaffSalaryStatusBadge from "./StaffSalaryStatusBadge";
 import type { StaffListItem } from "../types/staff";
@@ -19,6 +18,7 @@ const getPositionLabel = (item: StaffListItem) => {
 };
 
 export default function StaffTable({ staff, loading = false, onRowClick }: StaffTableProps) {
+  const { formatDate } = useSystemPreferenceFormatters();
   const columns: Column<StaffListItem>[] = [
     {
       key: "staff_code",
@@ -44,11 +44,17 @@ export default function StaffTable({ staff, loading = false, onRowClick }: Staff
       header: "Mobile",
     },
     {
+      key: "address",
+      label: "Address",
+      header: "Address",
+      render: (row) => row.address || "-",
+    },
+    {
       key: "date_hired",
       label: "Date Hired",
       header: "Date Hired",
       sortable: true,
-      render: (row) => format(new Date(row.date_hired), "yyyy-MM-dd"),
+      render: (row) => formatDate(row.date_hired),
     },
     {
       key: "employment_status",

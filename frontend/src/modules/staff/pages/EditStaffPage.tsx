@@ -62,6 +62,7 @@ export default function EditStaffPage() {
           father_name: staff.father_name ?? "",
           mobile_number: staff.mobile_number,
           whatsapp_number: staff.whatsapp_number ?? "",
+          address: staff.address ?? "",
           id_card_number: staff.id_card_number ?? "",
           email: staff.email ?? "",
           blood_group: staff.blood_group ?? undefined,
@@ -71,6 +72,7 @@ export default function EditStaffPage() {
           salary_currency: staff.salary_currency,
           salary_status: staff.salary_status,
           employment_status: staff.employment_status,
+          assigned_class_ids: staff.assigned_classes?.map((scheduleClass) => scheduleClass.id) ?? [],
           notes: staff.notes ?? "",
         }}
         existingProfilePictureUrl={staff.profile_picture_url}

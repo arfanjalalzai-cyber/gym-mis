@@ -6,6 +6,11 @@ export {
   type SelectProps,
   type SelectOption,
 } from "./Select";
+export {
+  default as SearchableSelect,
+  type SearchableSelectOption,
+  type SearchableSelectProps,
+} from "./SearchableSelect";
 export { default as Textarea, type TextareaProps } from "./Textarea";
 
 // Layout Components

@@ -1,6 +1,34 @@
 import apiClient from "@/lib/api";
 
 // Request/Response Types
+export interface SignUpRequest {
+  first_name: string;
+  last_name: string;
+  username: string;
+  email: string;
+  phone?: string;
+  profile_picture?: File;
+  password: string;
+  confirm_password: string;
+  admin_password: string;
+  role_name: "admin" | "manager" | "staff";
+}
+
+export interface SignUpResponse {
+  success: boolean;
+  message: string;
+  user_id: string;
+}
+
+export interface VerifyAdminPasswordRequest {
+  admin_password: string;
+}
+
+export interface VerifyAdminPasswordResponse {
+  success: boolean;
+  message: string;
+}
+
 export interface ForgotPasswordRequest {
   email_or_username: string;
 }
@@ -53,6 +81,42 @@ export interface LoginAttemptInfo {
  * Handles password reset, email verification, and session management
  */
 export const authService = {
+  /**
+   * Verify the current admin password before opening account creation
+   */
+  verifyAdminPassword: (data: VerifyAdminPasswordRequest) =>
+    apiClient.post<VerifyAdminPasswordResponse>(
+      "/accounts/auth/verify-admin-password/",
+      data
+    ),
+
+  /**
+   * Register a new user account
+   */
+  signup: (data: SignUpRequest) => {
+    const formData = new FormData();
+    formData.append("first_name", data.first_name);
+    formData.append("last_name", data.last_name);
+    formData.append("username", data.username);
+    formData.append("email", data.email);
+    if (data.phone) {
+      formData.append("phone", data.phone);
+    }
+    if (data.profile_picture) {
+      formData.append("profile_picture", data.profile_picture);
+    }
+    formData.append("password", data.password);
+    formData.append("confirm_password", data.confirm_password);
+    formData.append("admin_password", data.admin_password);
+    formData.append("role_name", data.role_name);
+
+    return apiClient.post<SignUpResponse>("/accounts/auth/signup/", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
+
   /**
    * Request password reset code via email
    * @param data Email or username

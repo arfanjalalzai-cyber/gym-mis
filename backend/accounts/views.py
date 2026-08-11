@@ -1,17 +1,16 @@
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import BasePermission, IsAuthenticated
+from django.conf import settings
 from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.contrib.auth import update_session_auth_hash
 from core.models import Permission
 from django.db.models import Count
-from core.permissions import (
-    IsSelfOrHasPermission,
-    PermissionMixin
-)
+from core.permissions import PermissionMixin
 from .models import (
     ActivityLog, User, UserPermission
 )
@@ -20,12 +19,36 @@ from .serializers import (
     ChangePasswordSerializer, LoginSerializer,
     CreateUserSerializer, ForgotPasswordSerializer,
     VerifyResetCodeSerializer, ResetPasswordSerializer, VerifyEmailSerializer,
-    ResendVerificationSerializer
+    ResendVerificationSerializer, SignUpSerializer
 )
+from .utils import get_security_policy
 
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet, CharFilter, DateFilter
 
-# views.py or viewsets.py
+
+class IsAdminAccountCreator(BasePermission):
+    """Allow account creation only for authenticated admins."""
+
+    message = "Admin permission is required to create a new account."
+
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(
+            user
+            and user.is_authenticated
+            and (user.is_superuser or user.role_name == "admin")
+        )
+
+
+def _set_refresh_cookie(response, refresh_token: str):
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=getattr(settings, "JWT_COOKIE_SECURE", False),
+        samesite=getattr(settings, "JWT_COOKIE_SAMESITE", "Lax"),
+        max_age=7 * 24 * 60 * 60,
+    )
 
 
 class UserViewSet(PermissionMixin, viewsets.ModelViewSet):
@@ -33,6 +56,11 @@ class UserViewSet(PermissionMixin, viewsets.ModelViewSet):
     serializer_class = UserProfileSerializer
     permission_module = 'users'
     parser_classes = [MultiPartParser, FormParser, JSONParser] 
+
+    def get_permissions(self):
+        if self.action == "create":
+            return [IsAdminAccountCreator()]
+        return super().get_permissions()
     
     def get_queryset(self):
 
@@ -161,26 +189,87 @@ class UserViewSet(PermissionMixin, viewsets.ModelViewSet):
 class AuthViewSet(viewsets.ViewSet):
     """Authentication viewset"""
     from django.core.handlers.wsgi import WSGIRequest
+
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="verify-admin-password",
+        permission_classes=[IsAdminAccountCreator],
+        parser_classes=[JSONParser],
+    )
+    def verify_admin_password(self, request):
+        """Verify the current admin password before showing account creation."""
+        admin_password = request.data.get("admin_password", "")
+        admin_user = request.user
+
+        if not admin_password:
+            return Response(
+                {"admin_password": "Admin password is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not admin_user.check_password(admin_password):
+            return Response(
+                {"admin_password": "Admin password is incorrect"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {"success": True, "message": "Admin password verified"}
+        )
+
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="signup",
+        permission_classes=[IsAdminAccountCreator],
+        parser_classes=[MultiPartParser, FormParser, JSONParser],
+    )
+    def signup(self, request):
+        """Admin-only endpoint for creating a staff account."""
+        serializer = SignUpSerializer(data=request.data, context={"request": request})
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response(
+                {
+                    "success": True,
+                    "message": "Account created successfully. You can now sign in.",
+                    "user_id": str(user.id),
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=False, methods=['post'])
     def login(self, request: WSGIRequest):
         """User login with attempt tracking and lockout"""
         from datetime import timedelta
 
         username = request.data.get('username', '')
+        security_policy = get_security_policy()
+        max_attempts = max(1, int(security_policy.login_attempt_limit))
+        lockout_minutes = max(1, int(security_policy.lockout_minutes))
 
         # Check if account is locked
         user_check = User.objects.filter(username=username).first()
         if user_check:
-            if user_check.account_locked_until and timezone.now() < user_check.account_locked_until:
-                minutes_remaining = int((user_check.account_locked_until - timezone.now()).total_seconds() / 60)
+            now = timezone.now()
+            if user_check.account_locked_until and now < user_check.account_locked_until:
+                seconds_remaining = max(
+                    0,
+                    int((user_check.account_locked_until - now).total_seconds()),
+                )
+                minutes_remaining = max(1, (seconds_remaining + 59) // 60)
                 return Response({
                     "detail": f"Account is locked. Try again in {minutes_remaining} minutes.",
                     "locked_until": user_check.account_locked_until.isoformat(),
+                    "minutes_remaining": minutes_remaining,
                     "attempts_remaining": 0
                 }, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
             # Unlock if lock period expired
-            if user_check.account_locked_until and timezone.now() >= user_check.account_locked_until:
+            if user_check.account_locked_until and now >= user_check.account_locked_until:
                 user_check.account_locked_until = None
                 user_check.failed_login_attempts = 0
                 user_check.save(update_fields=['account_locked_until', 'failed_login_attempts'])
@@ -191,18 +280,19 @@ class AuthViewSet(viewsets.ViewSet):
             if user_check:
                 user_check.failed_login_attempts += 1
 
-                # Lock account after 5 failed attempts
-                if user_check.failed_login_attempts >= 5:
-                    user_check.account_locked_until = timezone.now() + timedelta(minutes=30)
+                # Lock account after policy threshold failed attempts
+                if user_check.failed_login_attempts >= max_attempts:
+                    user_check.account_locked_until = timezone.now() + timedelta(minutes=lockout_minutes)
                     user_check.save(update_fields=['failed_login_attempts', 'account_locked_until'])
                     return Response({
-                        "detail": "Account locked due to too many failed login attempts. Try again in 30 minutes.",
+                        "detail": f"Account locked due to too many failed login attempts. Try again in {lockout_minutes} minutes.",
                         "locked_until": user_check.account_locked_until.isoformat(),
+                        "minutes_remaining": lockout_minutes,
                         "attempts_remaining": 0
                     }, status=status.HTTP_429_TOO_MANY_REQUESTS)
                 else:
                     user_check.save(update_fields=['failed_login_attempts'])
-                    attempts_remaining = 5 - user_check.failed_login_attempts
+                    attempts_remaining = max_attempts - user_check.failed_login_attempts
                     return Response({
                         "detail": "Invalid credentials.",
                         "attempts_remaining": attempts_remaining
@@ -211,12 +301,8 @@ class AuthViewSet(viewsets.ViewSet):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         user = serializer.validated_data["user"]
-
-        # ✅ Reset failed login attempts on successful login
         user.failed_login_attempts = 0
         user.account_locked_until = None
-
-        # ✅ Set JWT tokens
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
         refresh_token = str(refresh)
@@ -235,23 +321,12 @@ class AuthViewSet(viewsets.ViewSet):
             "last_login", "failed_login_attempts",
             "account_locked_until", "last_login_ip", "last_login_user_agent"
         ])
-
-        # ✅ Return response with user data and access token
         res = Response({
             "access": access_token,
             "user": UserProfileSerializer(user, context={"request": request}).data,
             "message": "Login successful"
         })
-
-        # ✅ Set httpOnly cookie for refresh token
-        res.set_cookie(
-            key="refresh_token",
-            value=refresh_token,
-            httponly=True,
-            secure=True,  # Use False if not using HTTPS in dev
-            samesite="Lax",
-            max_age=7 * 24 * 60 * 60  # 7 days
-        )
+        _set_refresh_cookie(res, refresh_token)
 
         return res
         
@@ -260,16 +335,15 @@ class AuthViewSet(viewsets.ViewSet):
         """User logout"""
         try:
             refresh_token = request.COOKIES.get("refresh_token")
-            token = RefreshToken(refresh_token)
-            token.blacklist()
+            if refresh_token:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
 
             response = Response({"detail": "Logged out"})
             response.delete_cookie("refresh_token")
             return response
         except Exception:
             return Response({"detail": "Invalid token"}, status=400)
-        # logout(request)
-        # return Response({'message': 'Logout successful'})
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def me(self, request):
@@ -348,7 +422,7 @@ class AuthViewSet(viewsets.ViewSet):
                 text_content = f'Your password reset verification code is: {verification_code}\n\nThis code will expire in 15 minutes.\n\nIf you did not request this, please ignore this email.'
 
                 email = EmailMultiAlternatives(
-                    subject='Password Reset Verification Code - School MIS',
+                    subject='Password Reset Verification Code - Gym MIS',
                     body=text_content,
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     to=[user.email]
@@ -553,7 +627,7 @@ class AuthViewSet(viewsets.ViewSet):
             user.save(update_fields=['email_verification_token', 'email_verification_sent_at'])
 
             # Send email with HTML template
-            verification_url = f"{settings.FRONTEND_URL}/mis/verify-email/{token}"
+            verification_url = f"{settings.FRONTEND_URL}/auth/verify-email/{token}"
             context = {
                 'user': user,
                 'verification_url': verification_url,
@@ -565,7 +639,7 @@ class AuthViewSet(viewsets.ViewSet):
                 text_content = f'Click the link below to verify your email:\n\n{verification_url}\n\nThis link will expire in 24 hours.'
 
                 email_msg = EmailMultiAlternatives(
-                    subject='Email Verification - School MIS',
+                    subject='Email Verification - Gym MIS',
                     body=text_content,
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     to=[user.email]
@@ -596,13 +670,15 @@ class AuthViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'], url_path='login-attempts/(?P<username>[^/.]+)')
     def login_attempts(self, request, username=None):
         """Get login attempt information for a user"""
+        security_policy = get_security_policy()
+        max_attempts = max(1, int(security_policy.login_attempt_limit))
         user = User.objects.filter(username=username).first()
 
         if not user:
             return Response({
                 'failed_attempts': 0,
                 'is_locked': False,
-                'attempts_remaining': 5
+                'attempts_remaining': max_attempts
             })
 
         is_locked = False
@@ -622,7 +698,7 @@ class AuthViewSet(viewsets.ViewSet):
             'failed_attempts': user.failed_login_attempts,
             'is_locked': is_locked,
             'locked_until': locked_until,
-            'attempts_remaining': max(0, 5 - user.failed_login_attempts)
+            'attempts_remaining': max(0, max_attempts - user.failed_login_attempts)
         })
 
 
@@ -688,8 +764,6 @@ class ActivityLogViewSet(PermissionMixin, viewsets.ReadOnlyModelViewSet):
         
   
 from rest_framework_simplejwt.views import TokenRefreshView
-from rest_framework.response import Response
-from rest_framework import status
 
 class CookieTokenRefreshView(TokenRefreshView):
     """
@@ -716,15 +790,7 @@ class CookieTokenRefreshView(TokenRefreshView):
         new_refresh_token = serializer.validated_data["refresh"]
 
         res = Response({"access": access_token, "message": "Token refreshed successfully"})
-
-        # ✅ Set the new refresh token in the httpOnly cookie
-        res.set_cookie(
-            key="refresh_token",
-            value=new_refresh_token,
-            httponly=True,
-            secure=True,  # Set to False if not using HTTPS in development
-            samesite="Lax",
-            max_age=7 * 24 * 60 * 60  # Should match REFRESH_TOKEN_LIFETIME
-        )
+        _set_refresh_cookie(res, new_refresh_token)
         
         return res
+

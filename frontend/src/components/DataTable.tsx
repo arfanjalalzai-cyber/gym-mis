@@ -1,6 +1,5 @@
 import { DataTable as PrimeDataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import type { DataTableProps } from "primereact/datatable";
 
 interface ColumnDef {
   field: string;
@@ -9,10 +8,11 @@ interface ColumnDef {
   body?: (rowData: unknown) => React.ReactNode;
 }
 
-interface MISDataTableProps<T> extends Omit<DataTableProps<T[]>, "children"> {
+interface MISDataTableProps<T> {
   data: T[];
   columns: ColumnDef[];
   loading?: boolean;
+  [key: string]: unknown;
 }
 
 export default function DataTable<T>({
@@ -23,13 +23,13 @@ export default function DataTable<T>({
 }: MISDataTableProps<T>) {
   return (
     <PrimeDataTable
-      value={data}
+      value={data as any[]}
       loading={loading}
       paginator
       rows={10}
       rowsPerPageOptions={[5, 10, 25, 50]}
-      className="rounded-xl bg-white shadow-sm dark:bg-gray-800"
-      {...props}
+      className="rounded-xl bg-card shadow-sm"
+      {...(props as Record<string, unknown>)}
     >
       {columns.map((col) => (
         <Column

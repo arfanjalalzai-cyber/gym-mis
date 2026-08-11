@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const optionalText = z.string().trim().optional().or(z.literal(""));
+const afghanMobilePattern = /^07\d{8}$/;
 
 const optionalPositiveNumber = z.preprocess((value) => {
   if (value === "" || value === null || value === undefined) return undefined;
@@ -12,7 +13,11 @@ export const memberFormSchema = z
   .object({
     first_name: z.string().trim().min(1, "First name is required"),
     last_name: z.string().trim().min(1, "Last name is required"),
-    phone: z.string().trim().min(1, "Phone is required"),
+    phone: z
+      .string()
+      .trim()
+      .regex(afghanMobilePattern, "Phone must be exactly 10 digits and start with 07"),
+    address: optionalText,
     id_card_number: optionalText,
     email: z
       .string()
@@ -31,10 +36,32 @@ export const memberFormSchema = z
       .optional()
       .or(z.literal("")),
     emergency_contact_name: optionalText,
-    emergency_contact_phone: optionalText,
+    emergency_contact_phone: z
+      .string()
+      .trim()
+      .refine(
+        (value) => value === "" || afghanMobilePattern.test(value),
+        "Emergency contact phone must be exactly 10 digits and start with 07"
+      )
+      .optional(),
     height_cm: optionalPositiveNumber,
     weight_kg: optionalPositiveNumber,
     join_date: z.string().trim().min(1, "Join date is required"),
+    membership_plan_template: z.preprocess((value) => {
+      if (value === "" || value === null || value === undefined) return null;
+      const parsed = Number(value);
+      return Number.isNaN(parsed) ? null : parsed;
+    }, z.number().int().positive("Membership plan is required").nullable()),
+    schedule_class: z.preprocess((value) => {
+      if (value === "" || value === null || value === undefined) return null;
+      const parsed = Number(value);
+      return Number.isNaN(parsed) ? null : parsed;
+    }, z.number().int().positive("Class is required").nullable()),
+    schedule_slot: z.preprocess((value) => {
+      if (value === "" || value === null || value === undefined) return null;
+      const parsed = Number(value);
+      return Number.isNaN(parsed) ? null : parsed;
+    }, z.number().int().positive("Training time is required").nullable()),
     status: z.enum(["active", "inactive"]),
     notes: optionalText,
   })

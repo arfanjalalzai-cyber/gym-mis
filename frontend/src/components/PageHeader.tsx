@@ -6,6 +6,8 @@ interface PageHeaderAction {
   icon?: ReactNode;
   onClick: () => void;
   variant?: ButtonProps["variant"];
+  loading?: boolean;
+  disabled?: boolean;
 }
 
 interface PageHeaderProps {
@@ -39,6 +41,8 @@ export default function PageHeader({
                 variant={action.variant || "primary"}
                 leftIcon={action.icon}
                 onClick={action.onClick}
+                loading={action.loading}
+                disabled={action.disabled}
               >
                 {action.label}
               </Button>

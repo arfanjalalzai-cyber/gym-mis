@@ -52,7 +52,7 @@ export default function GeneralSettings() {
     testEmailConfiguration,
   } = useSettingsStore();
 
-  // School Profile Form
+  // Gym Profile Form
   const {
     register: registerShop,
     handleSubmit: handleSubmitShop,
@@ -98,13 +98,13 @@ export default function GeneralSettings() {
     }
   }, [logoSettings]);
 
-  // Handle school profile save
+  // Handle gym profile save
   const onSaveShopSettings = async (data: ShopSettings) => {
     try {
       await updateShopSettings(data);
-      toast.success(t("settings.shopSaved", "School profile saved successfully"));
+      toast.success(t("settings.shopSaved", "Gym profile saved successfully"));
     } catch (error) {
-      toast.error(extractAxiosError(error, "Failed to save school profile"));
+      toast.error(extractAxiosError(error, "Failed to save gym profile"));
     }
   };
 
@@ -182,15 +182,15 @@ export default function GeneralSettings() {
     <div className="space-y-6">
       <PageHeader
         title={t("mis.settings.general", "General Settings")}
-        subtitle={t("mis.settings.generalSubtitle", "Configure school information and system settings")}
+        subtitle={t("mis.settings.generalSubtitle", "Configure gym information and system settings")}
       />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* School Profile */}
+        {/* Gym Profile */}
         <Card>
           <CardHeader
-            title={t("settings.schoolProfile", "School Profile")}
-            subtitle={t("settings.schoolProfileSubtitle", "Basic information about your school")}
+            title={t("settings.gymProfile", "Gym Profile")}
+            subtitle={t("settings.gymProfileSubtitle", "Basic information about your gym")}
           />
           <CardContent>
             {isLoadingShop ? (
@@ -198,8 +198,8 @@ export default function GeneralSettings() {
             ) : (
               <form onSubmit={handleSubmitShop(onSaveShopSettings)} className="space-y-4">
                 <Input
-                  label={t("settings.schoolName", "School Name")}
-                  placeholder={t("settings.schoolNamePlaceholder", "Enter school name")}
+                  label={t("settings.gymName", "Gym Name")}
+                  placeholder={t("settings.gymNamePlaceholder", "Enter Gym Name")}
                   leftIcon={<Building2 className="h-4 w-4" />}
                   error={shopErrors.shop_name?.message}
                   {...registerShop("shop_name")}
@@ -208,10 +208,9 @@ export default function GeneralSettings() {
                 <Input
                   label={t("settings.contactEmail", "Contact Email")}
                   type="email"
-                  placeholder={t("settings.contactEmailPlaceholder", "contact@school.edu")}
+                  placeholder={t("settings.contactEmailPlaceholder", "contact@gymmis.local")}
                   leftIcon={<Mail className="h-4 w-4" />}
                   error={shopErrors.contact_email?.message}
-                  {...registerEmail("from_email")}
                   {...registerShop("contact_email")}
                 />
 
@@ -225,7 +224,7 @@ export default function GeneralSettings() {
 
                 <Input
                   label={t("settings.address", "Address")}
-                  placeholder={t("settings.addressPlaceholder", "Enter school address")}
+                  placeholder={t("settings.addressPlaceholder", "Enter gym address")}
                   leftIcon={<MapPin className="h-4 w-4" />}
                   error={shopErrors.address?.message}
                   {...registerShop("address")}
@@ -244,8 +243,8 @@ export default function GeneralSettings() {
         {/* Logo Upload */}
         <Card>
           <CardHeader
-            title={t("settings.schoolLogo", "School Logo")}
-            subtitle={t("settings.logoSubtitle", "Upload your school's logo (max 2MB)")}
+            title={t("settings.gymLogo", "Gym Logo")}
+            subtitle={t("settings.logoSubtitle", "Upload your gym logo (max 2MB)")}
           />
           <CardContent>
             {isLoadingLogo ? (
@@ -261,7 +260,7 @@ export default function GeneralSettings() {
                     <div className="group relative">
                       <img
                         src={logoPreview}
-                        alt="School Logo"
+                        alt="Gym Logo"
                         className="h-32 w-32 rounded-xl border border-border object-contain"
                       />
                       <button
@@ -292,7 +291,6 @@ export default function GeneralSettings() {
                     variant="outline"
                     loading={isSavingLogo}
                     leftIcon={<Upload className="h-4 w-4" />}
-                    onClick={() => {}}
                   >
                     {logoPreview
                       ? t("settings.changeLogo", "Change Logo")
@@ -369,7 +367,7 @@ export default function GeneralSettings() {
                   <Input
                     label={t("settings.fromEmail", "From Email")}
                     type="email"
-                    placeholder="noreply@school.edu"
+                    placeholder="noreply@gymmis.local"
                     leftIcon={<Mail className="h-4 w-4" />}
                     error={emailErrors.from_email?.message}
                     {...registerEmail("from_email")}

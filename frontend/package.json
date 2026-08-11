@@ -13,7 +13,6 @@
     "@hookform/resolvers": "^5.0.1",
     "@primereact/types": "^11.0.0-alpha.1",
     "@react-pdf/renderer": "^4.3.2",
-    "@tailwindcss/vite": "^4.1.5",
     "@tanstack/react-query": "^5.83.0",
     "@tanstack/react-query-devtools": "^5.80.6",
     "@types/node": "^24.0.13",
@@ -21,6 +20,7 @@
     "chart.js": "^4.5.0",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.0",
+    "html-to-image": "^1.11.13",
     "i18next": "^25.2.1",
     "i18next-browser-languagedetector": "^8.1.0",
     "i18next-http-backend": "^3.0.2",
@@ -28,6 +28,7 @@
     "lucide-react": "^0.525.0",
     "primeicons": "^7.0.0",
     "primereact": "^10.9.6",
+    "qrcode.react": "^4.2.0",
     "react": "^19.1.0",
     "react-barcode": "^1.6.1",
     "react-dom": "^19.1.0",
@@ -46,15 +47,17 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
+    "@tailwindcss/vite": "^4.2.4",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.2",
-    "@vitejs/plugin-react": "^4.4.1",
+    "@vitejs/plugin-react": "^6.0.1",
+    "electron": "^42.4.1",
     "eslint": "^9.25.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
     "typescript": "~5.8.3",
     "typescript-eslint": "^7.3.1",
-    "vite": "^6.3.5"
+    "vite": "^8.0.10"
   }
 }

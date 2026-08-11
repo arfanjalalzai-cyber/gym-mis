@@ -8,6 +8,9 @@ from django.contrib.auth.models import UserManager as BaseUserManager
 
 ROLE_CHOICES = [
     ("admin", "Administrator" ),
+    ("manager", "Manager"),
+    ("staff", "Staff"),
+    # Temporary compatibility aliases during role migration window.
     ("receptionist", "Receptionist" ),
     ("viewer", "Viewer" ),
 ]
@@ -26,20 +29,6 @@ class User(AbstractUser, BaseModel):
     role_name = models.CharField(
         max_length=50,
         choices=ROLE_CHOICES,
-    )
-
-    language_preference = models.CharField(
-        max_length=10,
-        default='en',
-        choices=[
-            ('en', 'English'),
-            ('da', 'Dari'),
-            ('pa', 'Pashto'),
-            ('es', 'Spanish'),
-            ('fr', 'French'),
-            ('de', 'German'),
-            ('ar', 'Arabic'),
-        ]
     )
     theme = models.CharField(
         max_length=20,

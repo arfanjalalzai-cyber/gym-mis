@@ -1,12 +1,13 @@
 import { z } from "zod";
 
+const afghanMobilePattern = /^07\d{8}$/;
+
 // Shop Settings Schema
 export const shopSettingsSchema = z.object({
   shop_name: z.string().min(1, "Shop name is required"),
   phone_number: z
     .string()
-    .min(7, "Phone number must be at least 7 digits")
-    .max(20, "Phone number is too long"),
+    .regex(afghanMobilePattern, "Phone number must be exactly 10 digits and start with 07"),
   contact_email: z.string().email("Invalid email address"),
   address: z.string().min(1, "Address is required"),
 });
@@ -23,4 +24,3 @@ export const emailSettingsSchema = z.object({
   smtp_password: z.string().optional(),
   from_email: z.string().email("Invalid from email address"),
 });
-

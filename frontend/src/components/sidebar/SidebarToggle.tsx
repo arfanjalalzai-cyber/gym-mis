@@ -15,7 +15,7 @@ export default function SidebarToggle({ className = "" }: SidebarToggleProps) {
   return (
     <button
       onClick={toggleCollapse}
-      className={`flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 text-slate-300 transition-all duration-200 hover:bg-white/10 hover:text-white active:scale-95 ${className}`}
+      className={`flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 text-auth-muted transition-all duration-200 hover:bg-white/10 hover:text-white active:scale-95 ${className}`}
       aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
       title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
     >

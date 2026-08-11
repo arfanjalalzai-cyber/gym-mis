@@ -61,8 +61,16 @@ export const useSettingsStore = create<SettingsState>()(
       fetchShopSettings: async () => {
         set({ isLoadingShop: true });
         try {
-          const response = await apiClient.get("/core/settings/shop/");
-          set({ shopSettings: response.data, isLoadingShop: false });
+          const response = await apiClient.get("/settings/gym-profile/");
+          set({
+            shopSettings: {
+              shop_name: response.data.gym_name || "",
+              phone_number: response.data.phone_number || "",
+              contact_email: response.data.email || "",
+              address: response.data.address || "",
+            },
+            isLoadingShop: false,
+          });
         } catch (error) {
           set({ isLoadingShop: false });
           throw error;
@@ -73,8 +81,17 @@ export const useSettingsStore = create<SettingsState>()(
       fetchEmailSettings: async () => {
         set({ isLoadingEmail: true });
         try {
-          const response = await apiClient.get("/core/settings/email/");
-          set({ emailSettings: response.data, isLoadingEmail: false });
+          const response = await apiClient.get("/settings/notifications/");
+          set({
+            emailSettings: {
+              smtp_host: response.data.smtp_host || "",
+              smtp_port: response.data.smtp_port || 587,
+              smtp_username: response.data.smtp_username || "",
+              smtp_password: "",
+              from_email: response.data.from_email || "",
+            },
+            isLoadingEmail: false,
+          });
         } catch (error) {
           set({ isLoadingEmail: false });
           throw error;
@@ -85,8 +102,11 @@ export const useSettingsStore = create<SettingsState>()(
       fetchLogoSettings: async () => {
         set({ isLoadingLogo: true });
         try {
-          const response = await apiClient.get("/core/settings/logo/");
-          set({ logoSettings: response.data, isLoadingLogo: false });
+          const response = await apiClient.get("/settings/gym-profile/");
+          set({
+            logoSettings: { logo: response.data.gym_logo_url ?? null },
+            isLoadingLogo: false,
+          });
         } catch (error) {
           set({ isLoadingLogo: false });
           throw error;
@@ -106,8 +126,18 @@ export const useSettingsStore = create<SettingsState>()(
       updateShopSettings: async (data: ShopSettings) => {
         set({ isSavingShop: true });
         try {
-          const response = await apiClient.put("/core/settings/shop/", data);
-          set({ shopSettings: response.data, isSavingShop: false });
+          const existing = await apiClient.get("/settings/gym-profile/");
+          const payload = {
+            gym_name: data.shop_name,
+            address: data.address,
+            phone_number: data.phone_number,
+            email: data.contact_email,
+            website: existing.data.website || "",
+            working_hours_json: existing.data.working_hours_json || {},
+            description: existing.data.description || "",
+          };
+          await apiClient.put("/settings/gym-profile/", payload);
+          set({ shopSettings: data, isSavingShop: false });
         } catch (error) {
           set({ isSavingShop: false });
           throw error;
@@ -118,8 +148,17 @@ export const useSettingsStore = create<SettingsState>()(
       updateEmailSettings: async (data: EmailSettings) => {
         set({ isSavingEmail: true });
         try {
-          const response = await apiClient.put("/core/settings/email/", data);
-          set({ emailSettings: response.data, isSavingEmail: false });
+          const existing = await apiClient.get("/settings/notifications/");
+          const payload = {
+            ...existing.data,
+            smtp_host: data.smtp_host,
+            smtp_port: data.smtp_port,
+            smtp_username: data.smtp_username,
+            smtp_password: data.smtp_password || "",
+            from_email: data.from_email,
+          };
+          await apiClient.put("/settings/notifications/", payload);
+          set({ emailSettings: data, isSavingEmail: false });
         } catch (error) {
           set({ isSavingEmail: false });
           throw error;
@@ -131,18 +170,17 @@ export const useSettingsStore = create<SettingsState>()(
         set({ isSavingLogo: true });
         try {
           const formData = new FormData();
-          formData.append("logo", file);
+          formData.append("gym_logo", file);
 
-          const response = await apiClient.put(
-            "/core/settings/logo/",
-            formData,
-            {
-              headers: {
-                "Content-Type": "multipart/form-data",
-              },
-            }
-          );
-          set({ logoSettings: response.data, isSavingLogo: false });
+          const response = await apiClient.post("/settings/gym-profile/logo/", formData, {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          });
+          set({
+            logoSettings: { logo: response.data.gym_logo_url ?? null },
+            isSavingLogo: false,
+          });
         } catch (error) {
           set({ isSavingLogo: false });
           throw error;
@@ -151,7 +189,7 @@ export const useSettingsStore = create<SettingsState>()(
 
       // Test email configuration
       testEmailConfiguration: async () => {
-        await apiClient.post("/core/settings/email/test/");
+        await apiClient.post("/settings/notifications/test-email/");
       },
     }),
     {

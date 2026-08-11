@@ -9,7 +9,7 @@ import {
 } from "../stores/useStaffStore";
 import type { StaffListParams } from "../types/staff";
 
-const VALID_POSITION: StaffPositionFilter[] = ["all", "trainer", "clerk", "manager", "cleaner", "other"];
+const VALID_POSITION: StaffPositionFilter[] = ["all", "trainer", "manager", "cleaner", "other"];
 const VALID_EMPLOYMENT_STATUS: StaffEmploymentStatusFilter[] = [
   "all",
   "active",

@@ -40,11 +40,6 @@ function toJalaali(date: Date): JalaaliDate {
   return jalaali.toJalaali(date.getFullYear(), date.getMonth() + 1, date.getDate());
 }
 
-function toGregorian(jy: number, jm: number, jd: number): Date {
-  const g = jalaali.toGregorian(jy, jm, jd);
-  return new Date(g.gy, g.gm - 1, g.gd);
-}
-
 function getDaysInMonth(jy: number, jm: number): number {
   return jalaali.jalaaliMonthLength(jy, jm);
 }

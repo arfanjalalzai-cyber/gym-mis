@@ -20,7 +20,7 @@ export default function MemberSearchFilters({
     <div className="rounded-xl border border-border bg-card p-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <Input
-          placeholder="Search by code, name, phone or email"
+          placeholder="Search by code, name, phone, address or email"
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
           leftIcon={<Search className="h-4 w-4" />}
