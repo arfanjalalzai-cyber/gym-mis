@@ -1,0 +1,5 @@
+start:
+  command: cd backend && gunicorn gym.wsgi:application --bind 0.0.0.0:$PORT
+
+build:
+  install: pip install -r requirements.txt
