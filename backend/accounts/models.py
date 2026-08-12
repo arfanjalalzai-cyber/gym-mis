@@ -3,7 +3,7 @@ from django.db import models
 from django.utils import timezone
 from core.models import Permission
 from core.base_models import BaseModel
-from core.managers import UserManager
+from .managers import UserManager
 from django.contrib.auth.models import UserManager as BaseUserManager
 
 ROLE_CHOICES = [

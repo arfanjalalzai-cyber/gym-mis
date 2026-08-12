@@ -2,12 +2,33 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 APP_TITLE = "GYM-MIS"
 
-SECRET_KEY = 'django-insecure-fs6v95f(_-oq0mbv0&s-dzlpuwwdlail=np=ljj$z0=xw0!dy^'
-DEBUG = True
-ALLOWED_HOSTS = []
+DEBUG = os.getenv("DEBUG", "true").lower() == "true"
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = "django-insecure-local-development-key"
+    else:
+        raise ImproperlyConfigured("SECRET_KEY must be set when DEBUG=False.")
+
+
+def env_list(name, default=""):
+    return [item.strip() for item in os.getenv(name, default).split(",") if item.strip()]
+
+
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS")
+railway_domain = os.getenv("RAILWAY_PUBLIC_DOMAIN")
+if railway_domain:
+    ALLOWED_HOSTS.append(railway_domain)
+if DEBUG:
+    ALLOWED_HOSTS.extend(["localhost", "127.0.0.1"])
+if not ALLOWED_HOSTS:
+    raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must be set when DEBUG=False.")
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -16,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'whitenoise.runserver_nostatic',
     'rest_framework',
     'rest_framework_simplejwt',
     "rest_framework_simplejwt.token_blacklist",
@@ -39,6 +61,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -69,11 +92,16 @@ TEMPLATES = [
 WSGI_APPLICATION = 'gym.wsgi.application'
 
 
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL and not DEBUG:
+    raise ImproperlyConfigured("DATABASE_URL must be set when DEBUG=False.")
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    "default": dj_database_url.config(
+        default=DATABASE_URL or f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 }
 
 
@@ -117,33 +145,46 @@ USE_I18N = False
 
 USE_TZ = True
 
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
-JWT_COOKIE_SECURE = os.getenv("JWT_COOKIE_SECURE", "false").lower() == "true"
+FRONTEND_URLS = env_list("FRONTEND_URL", "http://localhost:5173")
+FRONTEND_URL = FRONTEND_URLS[0]
+JWT_COOKIE_SECURE = os.getenv("JWT_COOKIE_SECURE", str(not DEBUG)).lower() == "true"
 JWT_COOKIE_SAMESITE = os.getenv("JWT_COOKIE_SAMESITE", "Lax")
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
-
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-]
+CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS") or FRONTEND_URLS
+CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS") or FRONTEND_URLS
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS.extend(["http://127.0.0.1:5173"])
+    CORS_ALLOWED_ORIGINS.extend(["http://127.0.0.1:5173"])
 
 CORS_ALLOW_CREDENTIALS = True
 
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = os.getenv("MEDIA_ROOT", BASE_DIR / 'media')
 MEDIA_URL = '/media/'
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.gmail.com"
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = "qalandarizakim@gmail.com"
-EMAIL_HOST_PASSWORD = "wncp ytxw inma iumf"
-DEFAULT_FROM_EMAIL = 'Gym Admin qalandarizakim@gmail.com'
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true").lower() == "true"
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
 
-STATIC_URL = 'static/'
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_HSTS_SECONDS = 31_536_000 if not DEBUG else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_HSTS_PRELOAD = not DEBUG
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

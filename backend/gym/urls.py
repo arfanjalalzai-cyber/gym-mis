@@ -18,8 +18,18 @@ from django.contrib import admin
 from django.urls import path,include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.db import connection
+from django.http import JsonResponse
+
+
+def health_check(request):
+    """Railway health check that also verifies database connectivity."""
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT 1")
+    return JsonResponse({"status": "ok"})
 
 urlpatterns = [
+    path('health/', health_check, name='health-check'),
     path('admin/', admin.site.urls),
     path('api/core/', include('core.urls')),
     path('api/accounts/', include('accounts.urls')),
@@ -35,5 +45,6 @@ urlpatterns = [
     path('api/settings/', include('system_settings.urls')),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Uploaded media is kept on the Railway volume. Use object storage/CDN for media
+# if this application needs to scale beyond a single backend instance.
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
