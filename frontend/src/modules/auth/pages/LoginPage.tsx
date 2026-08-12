@@ -27,7 +27,7 @@ import axios, { AxiosError } from "axios";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 const authInputClass =
-  "h-12 rounded-xl border-white/15 bg-auth-background/35 text-base text-white placeholder:text-auth-muted focus:border-primary focus:ring-primary/25";
+  "h-12 rounded-xl border-white/25 !bg-[#10282c] text-base !text-white placeholder:text-slate-300 shadow-inner shadow-black/20 focus:border-primary focus:ring-primary/25 [-webkit-text-fill-color:#fff] autofill:!bg-[#10282c] autofill:[-webkit-text-fill-color:#fff] autofill:[-webkit-box-shadow:0_0_0_1000px_#10282c_inset]";
 
 export default function LoginPage() {
   const { t } = useTranslation();
