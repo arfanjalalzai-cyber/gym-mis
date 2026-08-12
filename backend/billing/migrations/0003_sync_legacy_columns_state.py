@@ -53,7 +53,7 @@ def ensure_legacy_columns(apps, schema_editor):
     if "is_locked" not in columns:
         schema_editor.execute(
             "ALTER TABLE billing_bills "
-            "ADD COLUMN is_locked bool NOT NULL DEFAULT 0"
+            "ADD COLUMN is_locked bool NOT NULL DEFAULT false"
         )
 
 
