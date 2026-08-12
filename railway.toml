@@ -1,0 +1,11 @@
+# Fallback config for a backend service deployed from the repository root.
+# For separate services, use /backend/railway.toml and /frontend/railway.toml.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/health/"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
