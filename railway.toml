@@ -5,6 +5,9 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
+# This also lets Railpack start the backend if Dockerfile selection is manually
+# overridden in the Railway service settings.
+startCommand = "cd backend && python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn gym.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120"
 healthcheckPath = "/health/"
 healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"

@@ -9,7 +9,7 @@ This repository deploys as two isolated Railway services. Set the service root d
 
 Both services use their own `Dockerfile`. Create a Railway PostgreSQL service, then set the backend `DATABASE_URL` variable to the PostgreSQL service's `DATABASE_URL` reference.
 
-> The repository root also has a backend fallback `Dockerfile` and `railway.toml`. This prevents a Railpack "No start command detected" error if an existing backend service is still configured with no Root Directory. New deployments should still use `/backend` and `/frontend` as separate service root directories.
+> The repository root also has a backend fallback `Dockerfile`, `railway.toml`, `Procfile`, and `railpack.json`. These files give both Docker and Railpack an explicit backend start command, preventing a Railpack "No start command detected" error if an existing backend service is still configured with no Root Directory. New deployments should still use `/backend` and `/frontend` as separate service root directories.
 
 ## Backend variables
 

@@ -1,0 +1,1 @@
+web: python manage.py migrate --noinput && python manage.py collectstatic --noinput && if [ "${CREATE_DEFAULT_SUPERUSER:-false}" = "true" ]; then python manage.py ensure_superuser; fi && gunicorn gym.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120 --access-logfile - --error-logfile -
