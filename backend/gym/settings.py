@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_filters',
     'core',
-    'accounts',
+    'accounts.apps.AccountsConfig',
     'members',
     'staff',
     'trainers',
