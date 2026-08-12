@@ -11,10 +11,10 @@ def ensure_legacy_column(apps, schema_editor):
         ]
         if "late_counts_as_half_day" not in columns:
             cursor.execute(
-                "ALTER TABLE attendance_policy ADD COLUMN late_counts_as_half_day bool DEFAULT 1"
+                "ALTER TABLE attendance_policy ADD COLUMN late_counts_as_half_day bool DEFAULT TRUE"
             )
             cursor.execute(
-                "UPDATE attendance_policy SET late_counts_as_half_day = 1 "
+                "UPDATE attendance_policy SET late_counts_as_half_day = TRUE "
                 "WHERE late_counts_as_half_day IS NULL"
             )
 

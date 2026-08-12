@@ -70,7 +70,7 @@ def normalize_legacy_schema(apps, schema_editor):
                 )
             if not _column_exists(schema_editor, "attendance_policy", "late_deduction_enabled"):
                 cursor.execute(
-                    "ALTER TABLE attendance_policy ADD COLUMN late_deduction_enabled bool DEFAULT 1"
+                    "ALTER TABLE attendance_policy ADD COLUMN late_deduction_enabled bool DEFAULT TRUE"
                 )
             if not _column_exists(schema_editor, "attendance_policy", "late_deduction_fraction"):
                 cursor.execute(
@@ -78,11 +78,11 @@ def normalize_legacy_schema(apps, schema_editor):
                 )
             if not _column_exists(schema_editor, "attendance_policy", "leave_is_paid"):
                 cursor.execute(
-                    "ALTER TABLE attendance_policy ADD COLUMN leave_is_paid bool DEFAULT 1"
+                    "ALTER TABLE attendance_policy ADD COLUMN leave_is_paid bool DEFAULT TRUE"
                 )
             if not _column_exists(schema_editor, "attendance_policy", "missing_as_absent"):
                 cursor.execute(
-                    "ALTER TABLE attendance_policy ADD COLUMN missing_as_absent bool DEFAULT 1"
+                    "ALTER TABLE attendance_policy ADD COLUMN missing_as_absent bool DEFAULT TRUE"
                 )
             if not _column_exists(schema_editor, "attendance_policy", "salary_basis"):
                 cursor.execute(
@@ -92,7 +92,7 @@ def normalize_legacy_schema(apps, schema_editor):
             if _column_exists(schema_editor, "attendance_policy", "late_counts_as_half_day"):
                 cursor.execute(
                     "UPDATE attendance_policy "
-                    "SET late_deduction_enabled = COALESCE(late_counts_as_half_day, 1)"
+                    "SET late_deduction_enabled = COALESCE(late_counts_as_half_day, TRUE)"
                 )
             cursor.execute(
                 "UPDATE attendance_policy "
