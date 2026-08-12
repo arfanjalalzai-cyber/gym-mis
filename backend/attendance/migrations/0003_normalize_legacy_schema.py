@@ -1,31 +1,24 @@
-from decimal import Decimal
-
 from django.db import migrations
 
 
 def _table_exists(schema_editor, table_name: str) -> bool:
-    with schema_editor.connection.cursor() as cursor:
-        cursor.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name=%s",
-            [table_name],
-        )
-        return cursor.fetchone() is not None
+    return table_name in schema_editor.connection.introspection.table_names()
 
 
 def _column_exists(schema_editor, table_name: str, column_name: str) -> bool:
     with schema_editor.connection.cursor() as cursor:
-        cursor.execute(f"PRAGMA table_info({table_name})")
-        columns = cursor.fetchall()
-    return any(col[1] == column_name for col in columns)
+        columns = schema_editor.connection.introspection.get_table_description(
+            cursor, table_name
+        )
+    return any(column.name == column_name for column in columns)
 
 
 def _index_exists(schema_editor, index_name: str) -> bool:
     with schema_editor.connection.cursor() as cursor:
-        cursor.execute(
-            "SELECT name FROM sqlite_master WHERE type='index' AND name=%s",
-            [index_name],
+        constraints = schema_editor.connection.introspection.get_constraints(
+            cursor, "attendance_records"
         )
-        return cursor.fetchone() is not None
+    return index_name in constraints
 
 
 def normalize_legacy_schema(apps, schema_editor):
@@ -127,4 +120,3 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(normalize_legacy_schema, noop_reverse),
     ]
-

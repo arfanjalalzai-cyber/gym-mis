@@ -3,8 +3,12 @@ from django.db import migrations, models
 
 def ensure_legacy_column(apps, schema_editor):
     with schema_editor.connection.cursor() as cursor:
-        cursor.execute("PRAGMA table_info(attendance_policy)")
-        columns = [row[1] for row in cursor.fetchall()]
+        columns = [
+            column.name
+            for column in schema_editor.connection.introspection.get_table_description(
+                cursor, "attendance_policy"
+            )
+        ]
         if "late_counts_as_half_day" not in columns:
             cursor.execute(
                 "ALTER TABLE attendance_policy ADD COLUMN late_counts_as_half_day bool DEFAULT 1"
@@ -42,4 +46,3 @@ class Migration(migrations.Migration):
             ],
         )
     ]
-
