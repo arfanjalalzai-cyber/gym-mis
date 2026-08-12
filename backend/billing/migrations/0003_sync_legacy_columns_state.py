@@ -41,13 +41,13 @@ def ensure_legacy_columns(apps, schema_editor):
     if "paid_amount" not in columns:
         schema_editor.execute(
             "ALTER TABLE billing_bills "
-            "ADD COLUMN paid_amount decimal NOT NULL DEFAULT False"
+            "ADD COLUMN paid_amount decimal NOT NULL DEFAULT 0"
         )
 
     if "remaining_amount" not in columns:
         schema_editor.execute(
             "ALTER TABLE billing_bills "
-            "ADD COLUMN remaining_amount decimal NOT NULL DEFAULT False"
+            "ADD COLUMN remaining_amount decimal NOT NULL DEFAULT 0"
         )
 
     if "is_locked" not in columns:
