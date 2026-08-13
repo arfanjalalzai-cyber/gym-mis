@@ -34,7 +34,7 @@ DJANGO_SUPERUSER_PASSWORD=<long-unique-password>
 DJANGO_SUPERUSER_EMAIL=<initial-admin-email>
 ```
 
-Attach a Railway Volume to the backend and mount it at `/data`; this preserves uploaded media. Database migrations and static-file collection run automatically before Gunicorn starts.
+Attach a Railway Volume to the backend and mount it at `/data`; this is required for uploaded media to survive redeployments. The backend automatically uses `/data/media` on Railway (or set `MEDIA_ROOT=/data/media` explicitly). Database migrations and static-file collection run automatically before Gunicorn starts.
 
 Uploaded profile pictures and gym branding are stored under `/data/media`. The backend serves them at `/media/`; attaching the `/data` volume is required to keep them after a redeploy.
 

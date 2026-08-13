@@ -163,7 +163,11 @@ if DEBUG:
 
 CORS_ALLOW_CREDENTIALS = True
 
-MEDIA_ROOT = os.getenv("MEDIA_ROOT", BASE_DIR / 'media')
+# Uploaded pictures must be outside the application directory in production.
+# Railway mounts its persistent Volume at /data, while local development keeps
+# media beside the Django project unless MEDIA_ROOT is explicitly configured.
+default_media_root = "/data/media" if (os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_SERVICE_ID")) else BASE_DIR / "media"
+MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT", default_media_root))
 MEDIA_URL = '/media/'
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
