@@ -27,10 +27,11 @@ if railway_domain:
     ALLOWED_HOSTS.append(railway_domain)
 if DEBUG:
     ALLOWED_HOSTS.extend(["localhost", "127.0.0.1"])
-if not ALLOWED_HOSTS:
-    # Railway health checks are sent through its private network, whose host
-    # is not always exposed as an application environment variable.
-    # Public origins remain protected by CORS/CSRF settings below.
+# Railway health checks arrive through the platform's private network and don't
+# provide a stable public Host header. CORS/CSRF still restrict browser origins.
+if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_SERVICE_ID"):
+    ALLOWED_HOSTS = ["*"]
+elif not ALLOWED_HOSTS:
     ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
