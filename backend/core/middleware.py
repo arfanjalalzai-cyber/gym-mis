@@ -3,6 +3,15 @@ from django.utils.deprecation import MiddlewareMixin
 from accounts.models import ActivityLog
 
 
+class RailwayHealthCheckMiddleware(MiddlewareMixin):
+    """Mark Railway's internal health check as secure to avoid an HTTPS redirect."""
+
+    def process_request(self, request):
+        if request.path == "/health/":
+            request.META["HTTP_X_FORWARDED_PROTO"] = "https"
+        return None
+
+
 # Thread-local storage for tenant context
 
 
