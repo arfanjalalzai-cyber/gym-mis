@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ActivityLog, RolePermission, User
+from .models import ActivityLog, Gym, RolePermission, User
 # Register your models here.
 
 @admin.register(RolePermission)
@@ -10,8 +10,14 @@ class RolePermissionAdmin(admin.ModelAdmin):
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-  fields = ("first_name", "last_name", "username", "email", "role_name")
-  list_display = ("first_name", "last_name", "username", "email", "role_name")
+  fields = ("first_name", "last_name", "username", "email", "role_name", "gym")
+  list_display = ("first_name", "last_name", "username", "email", "role_name", "gym")
+
+
+@admin.register(Gym)
+class GymAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug", "is_active", "contact_name")
+    search_fields = ("name", "slug", "contact_name", "contact_email")
 
 
 @admin.register(ActivityLog)

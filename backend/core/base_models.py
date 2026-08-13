@@ -1,6 +1,6 @@
 
 from django.db import models
-from .managers import SoftDeleteManager
+from .managers import SoftDeleteManager, TenantAllObjectsManager, get_current_gym
 from django.utils import timezone
 
 
@@ -9,9 +9,17 @@ class BaseModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
     deleted_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    gym = models.ForeignKey(
+        "accounts.Gym",
+        on_delete=models.PROTECT,
+        related_name="%(app_label)s_%(class)s_records",
+        null=True,
+        blank=True,
+        db_index=True,
+    )
     
     objects = SoftDeleteManager()
-    all_objects = models.Manager()  # Manager that includes soft-deleted objects
+    all_objects = TenantAllObjectsManager()  # Manager that includes soft-deleted objects
     
     class Meta:
         abstract = True
@@ -20,6 +28,13 @@ class BaseModel(models.Model):
         """Soft delete the object"""
         self.deleted_at = timezone.now()
         self.save()
+
+    def save(self, *args, **kwargs):
+        if not self.gym_id:
+            gym = get_current_gym()
+            if gym is not None:
+                self.gym = gym
+        super().save(*args, **kwargs)
     
     def restore(self):
         """Restore soft-deleted object"""

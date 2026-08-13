@@ -7,6 +7,7 @@ from .managers import UserManager
 from django.contrib.auth.models import UserManager as BaseUserManager
 
 ROLE_CHOICES = [
+    ("super_admin", "Super Administrator"),
     ("admin", "Administrator" ),
     ("manager", "Manager"),
     ("staff", "Staff"),
@@ -16,9 +17,36 @@ ROLE_CHOICES = [
 ]
 
 
+class Gym(models.Model):
+    """A customer gym (tenant) that owns its users and operational data."""
+
+    name = models.CharField(max_length=255, unique=True)
+    slug = models.SlugField(max_length=80, unique=True)
+    is_active = models.BooleanField(default=True)
+    contact_name = models.CharField(max_length=150, blank=True)
+    contact_email = models.EmailField(blank=True)
+    contact_phone = models.CharField(max_length=20, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "gyms"
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
 class User(AbstractUser, BaseModel):
     """Extended user model"""
     phone = models.CharField(max_length=20, blank=True, null=True)
+    gym = models.ForeignKey(
+        Gym,
+        on_delete=models.PROTECT,
+        related_name="users",
+        null=True,
+        blank=True,
+    )
     profile_picture = models.ImageField(
         upload_to="users/profile_pictures/",
         blank=True,
@@ -61,6 +89,15 @@ class User(AbstractUser, BaseModel):
 
     def __str__(self):
         return f"{self.username} ({self.get_full_name()})"
+
+    def save(self, *args, **kwargs):
+        # Preserve a smooth upgrade path for the former single-gym installation.
+        # API-created users always receive their gym explicitly.
+        if not self.gym_id and self.role_name != "super_admin":
+            gyms = Gym.objects.filter(is_active=True)
+            if gyms.count() == 1:
+                self.gym = gyms.first()
+        super().save(*args, **kwargs)
 
     @property
     def is_deleted(self):

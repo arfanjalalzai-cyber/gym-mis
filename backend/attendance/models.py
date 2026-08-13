@@ -14,7 +14,7 @@ class AttendancePolicy(BaseModel):
         (SALARY_BASIS_CALENDAR_DAYS, "Calendar Days"),
     ]
 
-    singleton_key = models.PositiveSmallIntegerField(default=1, unique=True, editable=False)
+    singleton_key = models.PositiveSmallIntegerField(default=1, editable=False)
     # Legacy compatibility for existing databases.
     late_counts_as_half_day_legacy = models.BooleanField(
         default=True,
@@ -43,6 +43,9 @@ class AttendancePolicy(BaseModel):
 
     class Meta:
         db_table = "attendance_policy"
+        constraints = [
+            models.UniqueConstraint(fields=["gym", "singleton_key"], name="attendance_policy_gym_singleton")
+        ]
 
     def __str__(self) -> str:
         return "Attendance Policy"
@@ -65,13 +68,15 @@ class AttendancePolicy(BaseModel):
             raise ValidationError(errors)
 
     def save(self, *args, **kwargs):
-        self.singleton_key = 1
         self.full_clean()
         super().save(*args, **kwargs)
 
     @classmethod
     def get_solo(cls):
-        policy, _ = cls.objects.get_or_create(singleton_key=1)
+        from core.managers import get_current_gym
+
+        gym = get_current_gym()
+        policy, _ = cls.objects.get_or_create(gym=gym, singleton_key=1)
         return policy
 
 

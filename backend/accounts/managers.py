@@ -8,6 +8,6 @@ class UserManager(DjangoUserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_active", True)
-        extra_fields.setdefault("role_name", "admin")
+        extra_fields.setdefault("role_name", "super_admin")
         extra_fields.setdefault("email_verified", True)
         return super().create_superuser(username, email, password, **extra_fields)

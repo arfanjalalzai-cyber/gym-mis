@@ -6,6 +6,7 @@ app_name = 'accounts'
 
 router = DefaultRouter()
 router.register(r'users', views.UserViewSet, basename='user')
+router.register(r'gyms', views.GymViewSet, basename='gym')
 router.register(r'auth', views.AuthViewSet, basename='auth')
 
 urlpatterns = [

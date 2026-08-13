@@ -16,12 +16,15 @@ class SingletonSettingsModel(BaseModel):
         abstract = True
 
     def save(self, *args, **kwargs):
-        self.pk = self.singleton_pk
         super().save(*args, **kwargs)
 
     @classmethod
     def get_solo(cls):
-        obj, _ = cls.all_objects.get_or_create(pk=cls.singleton_pk)
+        from core.managers import get_current_gym
+
+        gym = get_current_gym()
+        lookup = {"gym": gym} if gym is not None else {"gym__isnull": True}
+        obj, _ = cls.all_objects.get_or_create(**lookup)
         if obj.deleted_at is not None:
             obj.deleted_at = None
             obj.save(update_fields=["deleted_at", "updated_at"])

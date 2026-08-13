@@ -11,15 +11,13 @@ from django.contrib.auth import update_session_auth_hash
 from core.models import Permission
 from django.db.models import Count
 from core.permissions import PermissionMixin
-from .models import (
-    ActivityLog, User, UserPermission
-)
+from .models import ActivityLog, Gym, User, UserPermission
 from .serializers import (
     ActivityLogSerializer, UserListSerializer, UserProfileSerializer,
     ChangePasswordSerializer, LoginSerializer,
     CreateUserSerializer, ForgotPasswordSerializer,
     VerifyResetCodeSerializer, ResetPasswordSerializer, VerifyEmailSerializer,
-    ResendVerificationSerializer, SignUpSerializer
+    ResendVerificationSerializer, SignUpSerializer, GymSerializer
 )
 from .utils import get_security_policy
 
@@ -36,7 +34,8 @@ class IsAdminAccountCreator(BasePermission):
         return bool(
             user
             and user.is_authenticated
-            and (user.is_superuser or user.role_name == "admin")
+            and (user.is_superuser or user.role_name in {"super_admin", "admin"})
+            and (user.is_superuser or user.role_name == "super_admin" or user.gym_id)
         )
 
 
@@ -63,13 +62,12 @@ class UserViewSet(PermissionMixin, viewsets.ModelViewSet):
         return super().get_permissions()
     
     def get_queryset(self):
-
         user = self.request.user
-        if user.role_name and user.role_name == 'admin':
+        if user.is_superuser or user.role_name == "super_admin":
             return User.objects.all()
-        else:
-            # Regular users can only see themselves
-            return User.objects.filter(id=user.id).select_related('location', 'preferred_currency')
+        if user.role_name == "admin":
+            return User.objects.filter(gym=user.gym)
+        return User.objects.filter(id=user.id)
     
     def get_serializer_class(self):
         if self.action == 'create':
@@ -166,6 +164,8 @@ class UserViewSet(PermissionMixin, viewsets.ModelViewSet):
 
     @action(detail=True, methods=['put'])
     def permissions(self, request, pk=None):
+        if not (request.user.is_superuser or request.user.role_name in {"super_admin", "admin"}):
+            return Response({"detail": "Admin permission is required."}, status=status.HTTP_403_FORBIDDEN)
         user: User = self.get_object()
         selected_modules = set(request.data.get("permissions", []))
 
@@ -184,6 +184,25 @@ class UserViewSet(PermissionMixin, viewsets.ModelViewSet):
                 UserPermission.objects.create(user=user, permission=p, allow=allow)
 
         return Response({"message": "Permissions set successfully"}, status=200)
+
+
+class IsSuperAdmin(BasePermission):
+    message = "Super administrator permission is required."
+
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(user and user.is_authenticated and (user.is_superuser or user.role_name == "super_admin"))
+
+
+class GymViewSet(viewsets.ModelViewSet):
+    queryset = Gym.objects.all()
+    serializer_class = GymSerializer
+    permission_classes = [IsSuperAdmin]
+    search_fields = ["name", "slug", "contact_name", "contact_email"]
+    filterset_fields = ["is_active"]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    ordering_fields = ["name", "created_at"]
+    ordering = ["name"]
 
 
 class AuthViewSet(viewsets.ViewSet):

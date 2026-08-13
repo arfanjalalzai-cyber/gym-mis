@@ -82,6 +82,20 @@ class HasModulePermission(permissions.BasePermission):
         return _user_has_permission(request.user, permission_module, permission_action)
 
 
+class HasGymAccess(permissions.BasePermission):
+    """A non-super-admin account may access only its assigned active gym."""
+
+    message = "This account is not assigned to an active gym."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        if user.is_superuser or user.role_name == "super_admin":
+            return True
+        return bool(user.gym_id and user.gym.is_active)
+
+
 class IsSystemAdmin(permissions.BasePermission):
     """
     Permission for system administrators only.
@@ -139,9 +153,31 @@ class PermissionMixin:
         
         # Add module permission if specified
         if self.permission_module:
+            permission_classes.append(HasGymAccess)
             permission_classes.append(HasModulePermission)
         
         return [permission() for permission in permission_classes]
+
+    def initial(self, request, *args, **kwargs):
+        from core.managers import set_current_tenant
+
+        user = request.user
+        set_current_tenant(
+            gym=getattr(user, "gym", None) if getattr(user, "is_authenticated", False) else None,
+            is_super_admin=bool(
+                getattr(user, "is_authenticated", False)
+                and (getattr(user, "is_superuser", False) or getattr(user, "role_name", None) == "super_admin")
+            ),
+        )
+        return super().initial(request, *args, **kwargs)
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        from core.managers import clear_current_tenant
+
+        try:
+            return super().finalize_response(request, response, *args, **kwargs)
+        finally:
+            clear_current_tenant()
     
     def perform_destroy(self, instance):
         if hasattr(instance, 'deleted_at'):

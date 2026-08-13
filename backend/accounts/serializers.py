@@ -3,7 +3,7 @@ import re
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
-from .models import ROLE_CHOICES, ActivityLog, User, RolePermission
+from .models import ROLE_CHOICES, ActivityLog, Gym, User, RolePermission
 # serializers.py
 
 ROLE_ALIASES = {
@@ -69,6 +69,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'first_name', 'last_name', 'username', 'email', 'phone',
             'role_name', 'permissions',
+            'gym',
             'theme', 'is_active', 'last_login',
             'profile_picture', 'profile_picture_url',
         ]
@@ -86,6 +87,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
     def get_permissions(self, obj):
         """Get all permissions for this user through roles and direct permissions"""
         permissions = set()
+        if obj.is_superuser or obj.role_name == "super_admin":
+            from core.models import Permission
+            return list(Permission.objects.values_list("module", flat=True).distinct())
         
         # Get permissions from role
         if obj.role_name:
@@ -118,6 +122,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'email': data['email'],
             'phone': data['phone'],
             'role': normalize_role_name(data['role_name']) if data['role_name'] else None,
+            'gymId': data['gym'],
             'avatarUrl': data['profile_picture_url'],
             'permissions': data['permissions'],
             'preferences': {
@@ -150,7 +155,7 @@ class UserListSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'first_name',  'last_name', 'username', 'email', 'phone',
-            'role_name',
+            'role_name', 'gym', 'is_active', 'created_at',
         ]
     
 
@@ -163,8 +168,9 @@ class CreateUserSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'first_name', 'last_name', 'username', 'email', 'phone', 'password',
-            'role_name', 'send_verification_email'
+            'role_name', 'gym', 'send_verification_email'
         ]
+        extra_kwargs = {"gym": {"required": False, "allow_null": True}}
 
     def validate_username(self, value):
         if User.objects.filter(username=value).exists():
@@ -181,6 +187,9 @@ class CreateUserSerializer(serializers.ModelSerializer):
         valid_roles = {choice[0] for choice in ROLE_CHOICES}
         if role_name not in valid_roles:
             raise serializers.ValidationError("Invalid Role Name")
+        request_user = self.context["request"].user
+        if role_name == "super_admin" and not (request_user.is_superuser or request_user.role_name == "super_admin"):
+            raise serializers.ValidationError("Only a super administrator can create this role.")
         return role_name
 
     def validate_phone(self, value):
@@ -199,9 +208,16 @@ class CreateUserSerializer(serializers.ModelSerializer):
         send_email = validated_data.pop('send_verification_email', False)
 
         # Create user
+        request_user = self.context["request"].user
+        gym = validated_data.pop("gym", None)
+        if not (request_user.is_superuser or request_user.role_name == "super_admin"):
+            gym = request_user.gym
+        if role_name != "super_admin" and not gym:
+            raise serializers.ValidationError({"gym": "A gym assignment is required."})
         user = User.objects.create_user(
             password=password,
             role_name=role_name,
+            gym=gym,
             **validated_data
         )
 
@@ -293,6 +309,8 @@ class SignUpSerializer(serializers.ModelSerializer):
         valid_roles = {choice[0] for choice in ROLE_CHOICES}
         if role_name not in valid_roles:
             raise serializers.ValidationError("Invalid Role Name")
+        if role_name == "super_admin":
+            raise serializers.ValidationError("This role cannot be created from a gym account.")
         return role_name
 
     def validate(self, attrs):
@@ -316,14 +334,25 @@ class SignUpSerializer(serializers.ModelSerializer):
         password = validated_data.pop("password")
         role_name = validated_data.pop("role_name")
 
+        request_user = self.context["request"].user
+        if not request_user.gym_id:
+            raise serializers.ValidationError({"gym": "Your account is not assigned to a gym."})
         user = User.objects.create_user(
             password=password,
             role_name=role_name,
+            gym=request_user.gym,
             **validated_data,
         )
         user.email_verified = True
         user.save(update_fields=["email_verified"])
         return user
+
+
+class GymSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Gym
+        fields = ["id", "name", "slug", "is_active", "contact_name", "contact_email", "contact_phone", "created_at"]
+        read_only_fields = ["id", "created_at"]
 
 
 class ChangePasswordSerializer(serializers.Serializer):
