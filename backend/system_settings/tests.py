@@ -325,6 +325,20 @@ class SettingsEndpointsTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data["gym_logo_url"].endswith(".svg"))
 
+    def test_logo_upload_accepts_svg_with_an_incorrect_browser_mime_type(self):
+        self.client.force_authenticate(self.manager_user)
+        logo = SimpleUploadedFile(
+            "logo.svg",
+            b'<svg xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="10"/></svg>',
+            content_type="application/octet-stream",
+        )
+
+        response = self.client.post(
+            "/api/settings/gym-profile/logo/", {"gym_logo": logo}, format="multipart"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
     def test_logo_upload_restores_soft_deleted_gym_profile(self):
         self.client.force_authenticate(self.manager_user)
 

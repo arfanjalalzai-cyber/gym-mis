@@ -97,9 +97,10 @@ class GymImageUploadMixin:
         if not file:
             return Response({"detail": f"No {label} file uploaded."}, status=status.HTTP_400_BAD_REQUEST)
         allowed_types = set(self.allowed_image_content_types)
+        is_svg_filename = file.name.lower().endswith(".svg")
         if allow_svg:
             allowed_types.add(self.svg_content_type)
-        if file.content_type not in allowed_types:
+        if file.content_type not in allowed_types and not (allow_svg and is_svg_filename):
             allowed_label = "JPEG, PNG, WEBP" + (", SVG" if allow_svg else "")
             return Response(
                 {"detail": f"Invalid image file type. Allowed types: {allowed_label}."},
@@ -110,7 +111,7 @@ class GymImageUploadMixin:
                 {"detail": f"Image size must be {self.max_image_size_mb}MB or less."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if file.content_type == self.svg_content_type and not self._is_safe_svg(file):
+        if allow_svg and (file.content_type == self.svg_content_type or is_svg_filename) and not self._is_safe_svg(file):
             return Response(
                 {"detail": "Invalid SVG logo file."},
                 status=status.HTTP_400_BAD_REQUEST,
