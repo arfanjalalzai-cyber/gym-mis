@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import sqlite3
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -330,6 +331,23 @@ class SettingsEndpointsTests(APITestCase):
         logo = SimpleUploadedFile(
             "logo.svg",
             b'<svg xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="10"/></svg>',
+            content_type="application/octet-stream",
+        )
+
+        response = self.client.post(
+            "/api/settings/gym-profile/logo/", {"gym_logo": logo}, format="multipart"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_logo_upload_accepts_valid_png_with_generic_mime_type(self):
+        self.client.force_authenticate(self.manager_user)
+        logo = SimpleUploadedFile(
+            "logo-upload",
+            base64.b64decode(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwC"
+                "AAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+            ),
             content_type="application/octet-stream",
         )
 

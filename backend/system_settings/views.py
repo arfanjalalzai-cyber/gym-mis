@@ -5,6 +5,8 @@ import re
 import string
 from pathlib import Path
 
+from PIL import Image, UnidentifiedImageError
+
 from django.db import transaction
 from django.db.models import Q, Value
 from django.db.models.functions import Concat
@@ -100,7 +102,9 @@ class GymImageUploadMixin:
         is_svg_filename = file.name.lower().endswith(".svg")
         if allow_svg:
             allowed_types.add(self.svg_content_type)
-        if file.content_type not in allowed_types and not (allow_svg and is_svg_filename):
+        is_safe_svg = allow_svg and is_svg_filename and self._is_safe_svg(file)
+        is_valid_raster = self._is_valid_raster_image(file)
+        if file.content_type not in allowed_types and not is_safe_svg and not is_valid_raster:
             allowed_label = "JPEG, PNG, WEBP" + (", SVG" if allow_svg else "")
             return Response(
                 {"detail": f"Invalid image file type. Allowed types: {allowed_label}."},
@@ -111,12 +115,24 @@ class GymImageUploadMixin:
                 {"detail": f"Image size must be {self.max_image_size_mb}MB or less."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if allow_svg and (file.content_type == self.svg_content_type or is_svg_filename) and not self._is_safe_svg(file):
+        if allow_svg and (file.content_type == self.svg_content_type or is_svg_filename) and not is_safe_svg:
             return Response(
                 {"detail": "Invalid SVG logo file."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return None
+
+    @staticmethod
+    def _is_valid_raster_image(file):
+        """Accept a real image even when a browser supplies a generic MIME type."""
+        try:
+            image = Image.open(file)
+            image.verify()
+            return True
+        except (UnidentifiedImageError, OSError, ValueError):
+            return False
+        finally:
+            file.seek(0)
 
     @staticmethod
     def _is_safe_svg(file):
