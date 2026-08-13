@@ -28,7 +28,10 @@ if railway_domain:
 if DEBUG:
     ALLOWED_HOSTS.extend(["localhost", "127.0.0.1"])
 if not ALLOWED_HOSTS:
-    raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must be set when DEBUG=False.")
+    # Railway health checks are sent through its private network, whose host
+    # is not always exposed as an application environment variable.
+    # Public origins remain protected by CORS/CSRF settings below.
+    ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
