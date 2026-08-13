@@ -22,7 +22,9 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000
 // Create axios instance with default config
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10_000,
+  // Railway/database-backed uploads can take longer than a normal JSON request,
+  // particularly right after a deployment. Keep a reasonable upload window.
+  timeout: 60_000,
   withCredentials: true,
 });
 
