@@ -53,7 +53,7 @@ def ensure_legacy_columns(apps, schema_editor):
     if "is_locked" not in columns:
         schema_editor.execute(
             "ALTER TABLE billing_bills "
-            "ADD COLUMN is_locked bool NOT NULL DEFAULT False"
+            "ADD COLUMN is_locked boolean NOT NULL DEFAULT FALSE"
         )
 
 
@@ -105,4 +105,3 @@ class Migration(migrations.Migration):
             ],
         ),
     ]
-
