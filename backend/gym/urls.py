@@ -15,11 +15,11 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path,include
+from django.urls import path, include, re_path
 from django.conf import settings
-from django.conf.urls.static import static
 from django.db import connection
 from django.http import JsonResponse
+from django.views.static import serve
 
 
 def health_check(request):
@@ -45,6 +45,13 @@ urlpatterns = [
     path('api/settings/', include('system_settings.urls')),
 ]
 
-# Uploaded media is kept on the Railway volume. Use object storage/CDN for media
-# if this application needs to scale beyond a single backend instance.
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# WhiteNoise serves static assets, while uploaded media remains on the Railway
+# volume and must be served by Django. Replace this with object storage/CDN when
+# scaling to multiple backend replicas.
+urlpatterns += [
+    re_path(
+        r"^media/(?P<path>.*)$",
+        serve,
+        {"document_root": settings.MEDIA_ROOT},
+    ),
+]

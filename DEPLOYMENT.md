@@ -36,6 +36,8 @@ DJANGO_SUPERUSER_EMAIL=<initial-admin-email>
 
 Attach a Railway Volume to the backend and mount it at `/data`; this preserves uploaded media. Database migrations and static-file collection run automatically before Gunicorn starts.
 
+Uploaded profile pictures and gym branding are stored under `/data/media`. The backend serves them at `/media/`; attaching the `/data` volume is required to keep them after a redeploy.
+
 When `CREATE_DEFAULT_SUPERUSER=true`, the backend also runs `python manage.py ensure_superuser` after migrations. It creates the configured account once, or restores its admin privileges if it already exists. It does not replace an existing password unless `DEFAULT_SUPERUSER_UPDATE_PASSWORD=true` is set. The standard `python manage.py createsuperuser --noinput` is also supported and automatically assigns the required `role_name=admin`.
 
 ## Frontend variable
