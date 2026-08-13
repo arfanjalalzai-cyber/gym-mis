@@ -18,4 +18,4 @@ RUN useradd --create-home --shell /usr/sbin/nologin appuser \
 USER appuser
 EXPOSE 8000
 
-CMD ["/bin/sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput && if [ \"${CREATE_DEFAULT_SUPERUSER:-false}\" = \"true\" ]; then python manage.py ensure_superuser; fi && exec gunicorn gym.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3 --timeout 120 --access-logfile - --error-logfile -"]
+CMD ["/bin/sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput && if [ \"${CREATE_DEFAULT_SUPERUSER:-false}\" = \"true\" ]; then python manage.py ensure_superuser; fi && if [ \"${CREATE_DEMO_DATA:-false}\" = \"true\" ]; then python manage.py seed_demo_data; fi && exec gunicorn gym.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3 --timeout 120 --access-logfile - --error-logfile -"]
