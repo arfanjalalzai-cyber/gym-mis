@@ -13,6 +13,7 @@ import {
   Wallet,
   BarChart3,
   ReceiptText,
+  ShieldCheck,
 } from "lucide-react";
 import SidebarItem from "./SidebarItem";
 import SidebarToggle from "./SidebarToggle";
@@ -27,7 +28,7 @@ import type { Permission } from "@/data/permissions";
 export default function Sidebar() {
   const { t } = useTranslation();
   const { isCollapsed, isMobileOpen, closeMobile } = useSidebarState();
-  const { logout, hasPermission } = useUserStore();
+  const { logout, hasPermission, userProfile } = useUserStore();
 
   // Define navigation items
   const navItems = [
@@ -110,6 +111,13 @@ export default function Sidebar() {
     if (!("permission" in item) || !item.permission) return true;
     return hasPermission(item.permission);
   });
+  if (userProfile?.role === "super_admin") {
+    visibleNavItems.push({
+      path: "/super-admin",
+      label: "Super Admin",
+      icon: ShieldCheck,
+    });
+  }
 
   return (
     <>

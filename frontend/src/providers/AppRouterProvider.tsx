@@ -19,6 +19,7 @@ import {
   SettingsOverviewPage,
   SystemPreferencesSettingsPage,
   UserRoleManagementSettingsPage,
+  SuperAdminPage,
 } from "@/modules/settings";
 import { UserProfile } from "@/modules/profile";
 import {
@@ -76,6 +77,7 @@ function AppRouterProvider() {
         { path: "settings/security", element: <SecuritySettingsPage /> },
         { path: "settings/system-preferences", element: <SystemPreferencesSettingsPage /> },
         { path: "settings/backup-maintenance", element: <BackupMaintenanceSettingsPage /> },
+        { path: "super-admin", element: <SuperAdminPage /> },
 
         // Legacy compatibility aliases for one release window.
         { path: "settings/general", element: <GymInformationSettingsPage /> },

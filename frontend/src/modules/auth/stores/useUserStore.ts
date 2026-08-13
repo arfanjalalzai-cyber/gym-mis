@@ -28,6 +28,7 @@ export type UserProfile = {
   email: string;
   phone: string;
   role: RoleName;
+  gymId?: number | null;
   avatarUrl: string;
   location: number;
   permissions: Permission[];

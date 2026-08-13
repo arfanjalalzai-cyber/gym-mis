@@ -6,6 +6,7 @@ export { default as PaymentBillingSettingsPage } from "./pages/PaymentBillingSet
 export { default as SecuritySettingsPage } from "./pages/SecuritySettingsPage";
 export { default as SystemPreferencesSettingsPage } from "./pages/SystemPreferencesSettingsPage";
 export { default as BackupMaintenanceSettingsPage } from "./pages/BackupMaintenanceSettingsPage";
+export { default as SuperAdminPage } from "./pages/SuperAdminPage";
 
 // Legacy aliases kept for compatibility during migration.
 export { default as SettingsOverview } from "./pages/SettingsOverviewPage";
