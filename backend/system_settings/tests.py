@@ -308,7 +308,22 @@ class SettingsEndpointsTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("invalid logo file type", response.data.get("detail", "").lower())
+        self.assertIn("invalid image file type", response.data.get("detail", "").lower())
+
+    def test_logo_upload_accepts_safe_svg(self):
+        self.client.force_authenticate(self.manager_user)
+        logo = SimpleUploadedFile(
+            "logo.svg",
+            b'<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><path d="M0 0h40v40H0z"/></svg>',
+            content_type="image/svg+xml",
+        )
+
+        response = self.client.post(
+            "/api/settings/gym-profile/logo/", {"gym_logo": logo}, format="multipart"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["gym_logo_url"].endswith(".svg"))
 
     def test_logo_upload_restores_soft_deleted_gym_profile(self):
         self.client.force_authenticate(self.manager_user)

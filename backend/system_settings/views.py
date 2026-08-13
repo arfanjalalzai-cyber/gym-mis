@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import string
 from pathlib import Path
 
@@ -88,15 +89,20 @@ class GymProfileSettingsAPIView(APIView):
 
 class GymImageUploadMixin:
     allowed_image_content_types = {"image/jpeg", "image/jpg", "image/png", "image/webp"}
+    svg_content_type = "image/svg+xml"
     max_image_size_mb = 5
     max_image_size_bytes = max_image_size_mb * 1024 * 1024
 
-    def validate_image_file(self, file, label):
+    def validate_image_file(self, file, label, allow_svg=False):
         if not file:
             return Response({"detail": f"No {label} file uploaded."}, status=status.HTTP_400_BAD_REQUEST)
-        if file.content_type not in self.allowed_image_content_types:
+        allowed_types = set(self.allowed_image_content_types)
+        if allow_svg:
+            allowed_types.add(self.svg_content_type)
+        if file.content_type not in allowed_types:
+            allowed_label = "JPEG, PNG, WEBP" + (", SVG" if allow_svg else "")
             return Response(
-                {"detail": "Invalid image file type. Allowed types: JPEG, PNG, WEBP."},
+                {"detail": f"Invalid image file type. Allowed types: {allowed_label}."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if file.size > self.max_image_size_bytes:
@@ -104,7 +110,26 @@ class GymImageUploadMixin:
                 {"detail": f"Image size must be {self.max_image_size_mb}MB or less."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        if file.content_type == self.svg_content_type and not self._is_safe_svg(file):
+            return Response(
+                {"detail": "Invalid SVG logo file."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         return None
+
+    @staticmethod
+    def _is_safe_svg(file):
+        """Allow normal logo SVGs but reject executable or externally loaded content."""
+        try:
+            content = file.read().decode("utf-8")
+            file.seek(0)
+        except (UnicodeDecodeError, OSError):
+            return False
+
+        forbidden = r"<\s*(script|foreignObject|iframe|object|embed)\b|\bon\w+\s*=|\b(?:href|xlink:href)\s*=|url\s*\(|<!DOCTYPE|<!ENTITY"
+        return bool(re.search(r"<svg\b", content, re.IGNORECASE)) and not re.search(
+            forbidden, content, re.IGNORECASE
+        )
 
 
 class GymLogoAPIView(GymImageUploadMixin, APIView):
@@ -114,7 +139,7 @@ class GymLogoAPIView(GymImageUploadMixin, APIView):
         require_settings_permission(request, "change")
         settings_obj = GymProfileSettings.get_solo()
         file = request.FILES.get("gym_logo") or request.FILES.get("logo")
-        validation_error = self.validate_image_file(file, "logo")
+        validation_error = self.validate_image_file(file, "logo", allow_svg=True)
         if validation_error:
             return validation_error
 
