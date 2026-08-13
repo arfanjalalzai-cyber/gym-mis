@@ -1,6 +1,8 @@
+import base64
 from datetime import date, timedelta
 from decimal import Decimal
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -214,6 +216,33 @@ class StaffAPITests(APITestCase):
         response = self.client.post(self.list_url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn("staff_code", response.data)
+
+    def test_admin_can_upload_a_staff_profile_picture(self):
+        self.client.force_authenticate(user=self.admin_user)
+        # A valid 1×1 PNG keeps this test independent from fixture files.
+        image = SimpleUploadedFile(
+            "profile.png",
+            base64.b64decode(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwC"
+                "AAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+            ),
+            content_type="image/png",
+        )
+
+        response = self.client.patch(
+            reverse("staff:staff-detail", kwargs={"pk": self.staff.id}),
+            {"profile_picture": image},
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertIsNotNone(response.data["profile_picture_url"])
+        self.staff.refresh_from_db()
+        self.assertTrue(self.staff.profile_picture.name.startswith("staff/profile_pictures/"))
+
+        image_response = self.client.get(response.data["profile_picture_url"])
+        self.assertEqual(image_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(image_response["Content-Type"], "image/png")
 
     def test_receptionist_can_update_staff_and_remove_trainer_profile(self):
         self.client.force_authenticate(user=self.receptionist_user)

@@ -4,6 +4,19 @@ from core.image_path import settings_image_upload_path
 from .base_models import BaseModel
 
 
+class UploadedMedia(models.Model):
+    """Binary uploads stored in PostgreSQL so they survive Railway redeploys."""
+
+    name = models.CharField(max_length=500, primary_key=True)
+    content_type = models.CharField(max_length=100, blank=True, default="")
+    content = models.BinaryField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "uploaded_media"
+
+
 class Settings(BaseModel):
     SETTING_TYPES = [
         ('string', 'String'),

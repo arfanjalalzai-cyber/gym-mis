@@ -181,6 +181,11 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STORAGES = {
+    # Django 6 requires the default file storage to be explicitly present
+    # when STORAGES is configured. This stores uploaded photos in MEDIA_ROOT.
+    "default": {
+        "BACKEND": "core.storage.DatabaseMediaStorage",
+    },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },

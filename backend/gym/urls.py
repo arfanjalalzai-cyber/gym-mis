@@ -16,10 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include, re_path
-from django.conf import settings
 from django.db import connection
 from django.http import JsonResponse
-from django.views.static import serve
+from core.media_views import serve_database_media
 
 
 def health_check(request):
@@ -46,13 +45,11 @@ urlpatterns = [
     path('api/settings/', include('system_settings.urls')),
 ]
 
-# WhiteNoise serves static assets, while uploaded media remains on the Railway
-# volume and must be served by Django. Replace this with object storage/CDN when
-# scaling to multiple backend replicas.
+# Uploaded media is stored in PostgreSQL and served through Django. This avoids
+# Railway's ephemeral filesystem and retains images across deployments.
 urlpatterns += [
     re_path(
         r"^media/(?P<path>.*)$",
-        serve,
-        {"document_root": settings.MEDIA_ROOT},
+        serve_database_media,
     ),
 ]
