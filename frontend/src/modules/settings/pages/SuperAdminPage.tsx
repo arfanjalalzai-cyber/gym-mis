@@ -39,6 +39,8 @@ export default function SuperAdminPage() {
   const [gymName, setGymName] = useState("");
   const [gymSlug, setGymSlug] = useState("");
   const [account, setAccount] = useState(emptyAccount);
+  const [editingUser, setEditingUser] = useState<ManagedUser | null>(null);
+  const [editForm, setEditForm] = useState({ first_name: "", last_name: "", email: "", role_name: "admin" as ManagedUser["role_name"], gym: "" });
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(true);
@@ -132,6 +134,33 @@ export default function SuperAdminPage() {
     }
   };
 
+  const openEditUser = (user: ManagedUser) => {
+    setEditingUser(user);
+    setEditForm({
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.email,
+      role_name: user.role_name,
+      gym: user.gym ? String(user.gym) : "",
+    });
+  };
+
+  const saveUserEdit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editingUser) return;
+    try {
+      await apiClient.patch(`/accounts/users/${editingUser.id}/`, {
+        ...editForm,
+        gym: editForm.role_name === "super_admin" ? null : Number(editForm.gym),
+      });
+      setEditingUser(null);
+      setNotice("Account updated successfully.");
+      await loadData();
+    } catch {
+      setError("Account could not be updated. Ensure an ordinary account has a gym assigned.");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader title="Super Admin" subtitle="Private platform management for gyms, administrators, and platform accounts." />
@@ -167,6 +196,18 @@ export default function SuperAdminPage() {
         </section>
       </div>
 
+      {editingUser && <section className="rounded-xl border border-primary/30 bg-card p-5">
+        <div className="flex items-center justify-between gap-4"><div><h2 className="text-lg font-semibold text-text-primary">Edit Account</h2><p className="text-sm text-text-secondary">Editing {editingUser.username}</p></div><button className="rounded border border-border px-3 py-1" onClick={() => setEditingUser(null)}>Cancel</button></div>
+        <form onSubmit={saveUserEdit} className="mt-4 grid gap-3 sm:grid-cols-2">
+          <input className="rounded border border-border bg-background p-2" placeholder="First name" value={editForm.first_name} onChange={(event) => setEditForm({ ...editForm, first_name: event.target.value })} required />
+          <input className="rounded border border-border bg-background p-2" placeholder="Last name" value={editForm.last_name} onChange={(event) => setEditForm({ ...editForm, last_name: event.target.value })} required />
+          <input className="rounded border border-border bg-background p-2" type="email" placeholder="Email" value={editForm.email} onChange={(event) => setEditForm({ ...editForm, email: event.target.value })} required />
+          <select className="rounded border border-border bg-background p-2" value={editForm.role_name} onChange={(event) => setEditForm({ ...editForm, role_name: event.target.value as ManagedUser["role_name"] })}><option value="admin">Gym Admin</option><option value="manager">Manager</option><option value="staff">Staff</option><option value="super_admin">Super Admin</option></select>
+          {editForm.role_name !== "super_admin" && <select className="rounded border border-border bg-background p-2 sm:col-span-2" value={editForm.gym} onChange={(event) => setEditForm({ ...editForm, gym: event.target.value })} required><option value="">Select a gym</option>{gyms.map((gym) => <option key={gym.id} value={gym.id}>{gym.name}</option>)}</select>}
+          <button className="rounded bg-primary px-4 py-2 text-white sm:col-span-2" type="submit">Save Changes</button>
+        </form>
+      </section>}
+
       <section className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="border-b border-border p-5"><h2 className="text-lg font-semibold text-text-primary">Gyms</h2></div>
         <table className="w-full text-left text-sm"><thead><tr className="border-b border-border text-text-secondary"><th className="p-3">Gym</th><th>Slug</th><th>Status</th><th className="p-3">Action</th></tr></thead><tbody>{gyms.map((gym) => <tr key={gym.id} className="border-b border-border last:border-0"><td className="p-3 font-medium">{gym.name}</td><td>{gym.slug}</td><td>{gym.is_active ? "Active" : "Disabled"}</td><td className="p-3"><button className="rounded border border-border px-3 py-1" onClick={() => void toggleGym(gym)}>{gym.is_active ? "Disable" : "Enable"}</button></td></tr>)}</tbody></table>
@@ -174,7 +215,7 @@ export default function SuperAdminPage() {
 
       <section className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="border-b border-border p-5"><h2 className="text-lg font-semibold text-text-primary">Platform Accounts</h2></div>
-        {loading ? <p className="p-5 text-text-secondary">Loading accounts…</p> : <table className="w-full text-left text-sm"><thead><tr className="border-b border-border text-text-secondary"><th className="p-3">Account</th><th>Role</th><th>Gym</th><th>Status</th><th className="p-3">Action</th></tr></thead><tbody>{users.map((user) => <tr key={user.id} className="border-b border-border last:border-0"><td className="p-3"><p className="font-medium">{user.first_name} {user.last_name}</p><p className="text-text-secondary">{user.username}</p></td><td className="capitalize">{user.role_name.replace("_", " ")}</td><td>{user.role_name === "super_admin" ? "Platform" : <select className="rounded border border-border bg-background p-1" value={user.gym ?? ""} onChange={(event) => void assignUserGym(user, event.target.value)}><option value="">Unassigned</option>{gyms.map((gym) => <option key={gym.id} value={gym.id}>{gym.name}</option>)}</select>}</td><td>{user.is_active ? "Active" : "Disabled"}</td><td className="p-3"><button className="rounded border border-border px-3 py-1" onClick={() => void toggleUser(user)}>{user.is_active ? "Disable" : "Enable"}</button></td></tr>)}</tbody></table>}
+        {loading ? <p className="p-5 text-text-secondary">Loading accounts…</p> : <table className="w-full text-left text-sm"><thead><tr className="border-b border-border text-text-secondary"><th className="p-3">Account</th><th>Role</th><th>Gym</th><th>Status</th><th className="p-3">Action</th></tr></thead><tbody>{users.map((user) => <tr key={user.id} className="border-b border-border last:border-0"><td className="p-3"><p className="font-medium">{user.first_name} {user.last_name}</p><p className="text-text-secondary">{user.username}</p></td><td className="capitalize">{user.role_name.replace("_", " ")}</td><td>{user.role_name === "super_admin" ? "Platform" : <select className="rounded border border-border bg-background p-1" value={user.gym ?? ""} onChange={(event) => void assignUserGym(user, event.target.value)}><option value="">Unassigned</option>{gyms.map((gym) => <option key={gym.id} value={gym.id}>{gym.name}</option>)}</select>}</td><td>{user.is_active ? "Active" : "Disabled"}</td><td className="flex gap-2 p-3"><button className="rounded border border-border px-3 py-1" onClick={() => openEditUser(user)}>Edit</button><button className="rounded border border-border px-3 py-1" onClick={() => void toggleUser(user)}>{user.is_active ? "Disable" : "Enable"}</button></td></tr>)}</tbody></table>}
       </section>
     </div>
   );
