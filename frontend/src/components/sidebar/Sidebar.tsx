@@ -107,11 +107,15 @@ export default function Sidebar() {
       divider: undefined,
     },
   ];
-  const visibleNavItems = navItems.filter((item) => {
+  const isSuperAdmin = userProfile?.role === "super_admin";
+  const visibleNavItems = (isSuperAdmin
+    ? navItems.filter((item) => ["/", "/profile", "/settings"].includes(item.path))
+    : navItems
+  ).filter((item) => {
     if (!("permission" in item) || !item.permission) return true;
     return hasPermission(item.permission);
   });
-  if (userProfile?.role === "super_admin") {
+  if (isSuperAdmin) {
     visibleNavItems.push({
       path: "/super-admin",
       label: "Super Admin",

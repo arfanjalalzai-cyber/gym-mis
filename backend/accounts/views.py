@@ -54,6 +54,7 @@ class UserViewSet(PermissionMixin, viewsets.ModelViewSet):
     """ViewSet for User management"""
     serializer_class = UserProfileSerializer
     permission_module = 'users'
+    allow_platform_access = True
     parser_classes = [MultiPartParser, FormParser, JSONParser] 
 
     def get_permissions(self):

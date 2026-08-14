@@ -83,16 +83,16 @@ class HasModulePermission(permissions.BasePermission):
 
 
 class HasGymAccess(permissions.BasePermission):
-    """A non-super-admin account may access only its assigned active gym."""
+    """Restrict gym operations to the account's assigned gym."""
 
-    message = "This account is not assigned to an active gym."
+    message = "This account cannot access gym operational data."
 
     def has_permission(self, request, view):
         user = request.user
         if not user or not user.is_authenticated:
             return False
         if user.is_superuser or user.role_name == "super_admin":
-            return True
+            return bool(getattr(view, "allow_platform_access", False))
         return bool(user.gym_id and user.gym.is_active)
 
 

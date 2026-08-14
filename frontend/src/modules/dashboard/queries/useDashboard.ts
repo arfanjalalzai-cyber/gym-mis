@@ -11,20 +11,23 @@ export const dashboardKeys = {
   alerts: (limit: number) => [...dashboardKeys.all, "alerts", limit] as const,
 };
 
-export const useDashboardOverview = (months: AllowedMonths) =>
+export const useDashboardOverview = (months: AllowedMonths, enabled = true) =>
   useQuery({
     queryKey: dashboardKeys.overview(months),
     queryFn: () => dashboardService.getOverview(months),
+    enabled,
   });
 
-export const useDashboardActivity = (limit = 5) =>
+export const useDashboardActivity = (limit = 5, enabled = true) =>
   useQuery({
     queryKey: dashboardKeys.activity(limit),
     queryFn: () => dashboardService.getActivity(limit),
+    enabled,
   });
 
-export const useDashboardAlerts = (limit = 5) =>
+export const useDashboardAlerts = (limit = 5, enabled = true) =>
   useQuery({
     queryKey: dashboardKeys.alerts(limit),
     queryFn: () => dashboardService.getAlerts(limit),
+    enabled,
   });

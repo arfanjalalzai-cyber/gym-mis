@@ -2,6 +2,7 @@ import { LayoutDashboard } from "lucide-react";
 
 import { PageHeader } from "@/components";
 import { Alert, Card, CardContent } from "@/components/ui";
+import { useUserStore } from "@/modules/auth";
 import DashboardAlertsPanel from "../components/DashboardAlertsPanel";
 import DashboardExpenseReports from "../components/DashboardExpenseReports";
 import DashboardStatsGrid from "../components/DashboardStatsGrid";
@@ -24,10 +25,21 @@ import type { AllowedMonths } from "../types/dashboard";
 const monthOptions: AllowedMonths[] = [6, 12, 24];
 
 export default function DashboardPage() {
+  const userProfile = useUserStore((state) => state.userProfile);
+  const isSuperAdmin = userProfile?.role === "super_admin";
   const { months, activityLimit, alertsLimit, updateMonths } = useDashboardFilters();
-  const overviewQuery = useDashboardOverview(months);
-  const activityQuery = useDashboardActivity(activityLimit);
-  const alertsQuery = useDashboardAlerts(alertsLimit);
+  const overviewQuery = useDashboardOverview(months, !isSuperAdmin);
+  const activityQuery = useDashboardActivity(activityLimit, !isSuperAdmin);
+  const alertsQuery = useDashboardAlerts(alertsLimit, !isSuperAdmin);
+
+  if (isSuperAdmin) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Platform Dashboard" subtitle="Private Super Admin workspace. Gym members, finance, attendance, and operational data are not shown here." />
+        <Card><CardContent className="p-6 text-sm text-text-secondary">Use <strong>Super Admin</strong> to create gyms, assign customer accounts, and manage platform access.</CardContent></Card>
+      </div>
+    );
+  }
 
   const hasError =
     overviewQuery.isError || activityQuery.isError || alertsQuery.isError;
