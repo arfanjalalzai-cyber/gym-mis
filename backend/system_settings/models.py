@@ -23,6 +23,12 @@ class SingletonSettingsModel(BaseModel):
         from core.managers import get_current_gym
 
         gym = get_current_gym()
+        if gym is None:
+            from accounts.models import Gym
+
+            active_gyms = Gym.objects.filter(is_active=True)
+            if active_gyms.count() == 1:
+                gym = active_gyms.first()
         lookup = {"gym": gym} if gym is not None else {"gym__isnull": True}
         obj, _ = cls.all_objects.get_or_create(**lookup)
         if obj.deleted_at is not None:

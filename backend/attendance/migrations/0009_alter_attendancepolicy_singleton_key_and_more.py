@@ -3,6 +3,39 @@
 from django.db import migrations, models
 
 
+def drop_legacy_singleton_key_constraint(apps, schema_editor):
+    """Handle PostgreSQL databases created before the constraint was named."""
+    if schema_editor.connection.vendor != "postgresql":
+        return
+
+    with schema_editor.connection.cursor() as cursor:
+        cursor.execute(
+            """
+            DO $$
+            DECLARE constraint_name text;
+            BEGIN
+                SELECT constraint_ref.conname INTO constraint_name
+                FROM pg_constraint constraint_ref
+                JOIN pg_class table_ref ON table_ref.oid = constraint_ref.conrelid
+                JOIN pg_attribute attribute_ref
+                    ON attribute_ref.attrelid = table_ref.oid
+                    AND attribute_ref.attnum = ANY(constraint_ref.conkey)
+                WHERE table_ref.relname = 'attendance_policy'
+                  AND constraint_ref.contype = 'u'
+                  AND attribute_ref.attname = 'singleton_key'
+                LIMIT 1;
+
+                IF constraint_name IS NOT NULL THEN
+                    EXECUTE format(
+                        'ALTER TABLE attendance_policy DROP CONSTRAINT %I',
+                        constraint_name
+                    );
+                END IF;
+            END $$;
+            """
+        )
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -11,10 +44,15 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name='attendancepolicy',
-            name='singleton_key',
-            field=models.PositiveSmallIntegerField(default=1, editable=False),
+        migrations.SeparateDatabaseAndState(
+            database_operations=[migrations.RunPython(drop_legacy_singleton_key_constraint)],
+            state_operations=[
+                migrations.AlterField(
+                    model_name='attendancepolicy',
+                    name='singleton_key',
+                    field=models.PositiveSmallIntegerField(default=1, editable=False),
+                ),
+            ],
         ),
         migrations.AddConstraint(
             model_name='attendancepolicy',

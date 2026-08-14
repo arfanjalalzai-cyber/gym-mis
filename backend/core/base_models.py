@@ -32,6 +32,12 @@ class BaseModel(models.Model):
     def save(self, *args, **kwargs):
         if not self.gym_id:
             gym = get_current_gym()
+            if gym is None:
+                from accounts.models import Gym
+
+                active_gyms = Gym.objects.filter(is_active=True)
+                if active_gyms.count() == 1:
+                    gym = active_gyms.first()
             if gym is not None:
                 self.gym = gym
         super().save(*args, **kwargs)

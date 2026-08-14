@@ -76,6 +76,12 @@ class AttendancePolicy(BaseModel):
         from core.managers import get_current_gym
 
         gym = get_current_gym()
+        if gym is None:
+            from accounts.models import Gym
+
+            active_gyms = Gym.objects.filter(is_active=True)
+            if active_gyms.count() == 1:
+                gym = active_gyms.first()
         policy, _ = cls.objects.get_or_create(gym=gym, singleton_key=1)
         return policy
 
