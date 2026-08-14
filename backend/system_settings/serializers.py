@@ -383,9 +383,16 @@ class SettingsUserSerializer(serializers.ModelSerializer):
         if role_name == "admin" and request and not request.user.is_superuser:
             raise serializers.ValidationError({"role_name": "Only superusers can create admin users."})
 
+        gym = None
+        if request and not (request.user.is_superuser or request.user.role_name == "super_admin"):
+            gym = request.user.gym
+            if gym is None:
+                raise serializers.ValidationError({"gym": "Your account is not assigned to a gym."})
+
         user = User.objects.create_user(
             role_name=role_name_for_storage(role_name),
             password=password,
+            gym=gym,
             **validated_data,
         )
         return user

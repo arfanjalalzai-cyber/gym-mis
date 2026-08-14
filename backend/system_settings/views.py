@@ -218,7 +218,13 @@ class SettingsUsersViewSet(viewsets.ModelViewSet):
         return [permission() for permission in self.permission_classes]
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        requester = self.request.user
+        if requester.is_superuser or requester.role_name == "super_admin":
+            queryset = super().get_queryset()
+        elif requester.gym_id:
+            queryset = User.objects.filter(gym=requester.gym).order_by("-created_at")
+        else:
+            queryset = User.objects.none()
         role_param = self.request.query_params.get("role")
         if role_param:
             normalized = normalize_role_name(role_param)
