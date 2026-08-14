@@ -192,6 +192,7 @@ export default function SuperAdminPage() {
             </select>
             {account.role_name !== "super_admin" && <select className="rounded border border-border bg-background p-2 sm:col-span-2" value={account.gym} onChange={(event) => setAccount({ ...account, gym: event.target.value })} required><option value="">Select a gym</option>{gyms.filter((gym) => gym.is_active).map((gym) => <option key={gym.id} value={gym.id}>{gym.name}</option>)}</select>}
             <button className="rounded bg-primary px-4 py-2 text-white sm:col-span-2" type="submit">Create Account</button>
+            <button className="rounded border border-border px-4 py-2 sm:col-span-2" type="button" onClick={() => document.getElementById("platform-accounts")?.scrollIntoView({ behavior: "smooth" })}>Manage / Edit Accounts</button>
           </form>
         </section>
       </div>
@@ -208,7 +209,7 @@ export default function SuperAdminPage() {
         </form>
       </section>}
 
-      <section className="overflow-hidden rounded-xl border border-border bg-card">
+      <section id="platform-accounts" className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="border-b border-border p-5"><h2 className="text-lg font-semibold text-text-primary">Gyms</h2></div>
         <table className="w-full text-left text-sm"><thead><tr className="border-b border-border text-text-secondary"><th className="p-3">Gym</th><th>Slug</th><th>Status</th><th className="p-3">Action</th></tr></thead><tbody>{gyms.map((gym) => <tr key={gym.id} className="border-b border-border last:border-0"><td className="p-3 font-medium">{gym.name}</td><td>{gym.slug}</td><td>{gym.is_active ? "Active" : "Disabled"}</td><td className="p-3"><button className="rounded border border-border px-3 py-1" onClick={() => void toggleGym(gym)}>{gym.is_active ? "Disable" : "Enable"}</button></td></tr>)}</tbody></table>
       </section>
