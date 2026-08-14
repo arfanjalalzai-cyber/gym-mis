@@ -10,7 +10,7 @@ from .serializers import normalize_role_name
 def can_access_settings(user, action: str = "view") -> bool:
     if not user or not user.is_authenticated:
         return False
-    if user.is_superuser:
+    if user.role_name == "super_admin":
         return True
 
     normalized_role = normalize_role_name(getattr(user, "role_name", ""))
@@ -29,7 +29,7 @@ def require_settings_permission(request, action: str = "view"):
 def can_manage_users(user, action: str = "view") -> bool:
     if not user or not user.is_authenticated:
         return False
-    if user.is_superuser:
+    if user.role_name == "super_admin":
         return True
     return _user_has_permission(user, "users", action)
 
@@ -43,7 +43,7 @@ def require_settings_admin(request):
     user = getattr(request, "user", None)
     if not user or not user.is_authenticated:
         raise PermissionDenied("Authentication required.")
-    if user.is_superuser:
+    if user.role_name == "super_admin":
         return
     normalized_role = normalize_role_name(getattr(user, "role_name", ""))
     if normalized_role != "admin":

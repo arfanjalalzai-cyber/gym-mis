@@ -380,11 +380,11 @@ class SettingsUserSerializer(serializers.ModelSerializer):
         role_name = validated_data.pop("role_name")
         password = validated_data.pop("password")
 
-        if role_name == "admin" and request and not request.user.is_superuser:
+        if role_name == "admin" and request and request.user.role_name != "super_admin":
             raise serializers.ValidationError({"role_name": "Only superusers can create admin users."})
 
         gym = None
-        if request and not (request.user.is_superuser or request.user.role_name == "super_admin"):
+        if request and request.user.role_name != "super_admin":
             gym = request.user.gym
             if gym is None:
                 raise serializers.ValidationError({"gym": "Your account is not assigned to a gym."})

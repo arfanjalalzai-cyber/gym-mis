@@ -219,7 +219,7 @@ class SettingsUsersViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         requester = self.request.user
-        if requester.is_superuser or requester.role_name == "super_admin":
+        if requester.role_name == "super_admin":
             queryset = super().get_queryset()
         elif requester.gym_id:
             queryset = User.objects.filter(gym=requester.gym).exclude(

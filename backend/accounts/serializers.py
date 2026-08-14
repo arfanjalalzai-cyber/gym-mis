@@ -87,7 +87,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     def get_permissions(self, obj):
         """Get all permissions for this user through roles and direct permissions"""
         permissions = set()
-        if obj.is_superuser or obj.role_name == "super_admin":
+        if obj.role_name == "super_admin":
             from core.models import Permission
             return list(Permission.objects.values_list("module", flat=True).distinct())
         
@@ -136,7 +136,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         is_platform_admin = bool(
             requester
             and requester.is_authenticated
-            and (requester.is_superuser or requester.role_name == "super_admin")
+            and requester.role_name == "super_admin"
         )
 
         if "gym" in validated_data and not is_platform_admin:
@@ -203,7 +203,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
         if role_name not in valid_roles:
             raise serializers.ValidationError("Invalid Role Name")
         request_user = self.context["request"].user
-        if role_name == "super_admin" and not (request_user.is_superuser or request_user.role_name == "super_admin"):
+        if role_name == "super_admin" and request_user.role_name != "super_admin":
             raise serializers.ValidationError("Only a super administrator can create this role.")
         return role_name
 
@@ -225,7 +225,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
         # Create user
         request_user = self.context["request"].user
         gym = validated_data.pop("gym", None)
-        if not (request_user.is_superuser or request_user.role_name == "super_admin"):
+        if request_user.role_name != "super_admin":
             gym = request_user.gym
         if role_name != "super_admin" and not gym:
             raise serializers.ValidationError({"gym": "A gym assignment is required."})

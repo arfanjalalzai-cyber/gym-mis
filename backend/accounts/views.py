@@ -34,8 +34,8 @@ class IsAdminAccountCreator(BasePermission):
         return bool(
             user
             and user.is_authenticated
-            and (user.is_superuser or user.role_name in {"super_admin", "admin"})
-            and (user.is_superuser or user.role_name == "super_admin" or user.gym_id)
+            and user.role_name in {"super_admin", "admin"}
+            and (user.role_name == "super_admin" or user.gym_id)
         )
 
 
@@ -64,7 +64,7 @@ class UserViewSet(PermissionMixin, viewsets.ModelViewSet):
     
     def get_queryset(self):
         user = self.request.user
-        if user.is_superuser or user.role_name == "super_admin":
+        if user.role_name == "super_admin":
             return User.objects.all()
         if user.role_name == "admin":
             return User.objects.filter(gym=user.gym).exclude(role_name="super_admin")
@@ -165,7 +165,7 @@ class UserViewSet(PermissionMixin, viewsets.ModelViewSet):
 
     @action(detail=True, methods=['put'])
     def permissions(self, request, pk=None):
-        if not (request.user.is_superuser or request.user.role_name in {"super_admin", "admin"}):
+        if request.user.role_name not in {"super_admin", "admin"}:
             return Response({"detail": "Admin permission is required."}, status=status.HTTP_403_FORBIDDEN)
         user: User = self.get_object()
         selected_modules = set(request.data.get("permissions", []))
@@ -192,7 +192,7 @@ class IsSuperAdmin(BasePermission):
 
     def has_permission(self, request, view):
         user = request.user
-        return bool(user and user.is_authenticated and (user.is_superuser or user.role_name == "super_admin"))
+        return bool(user and user.is_authenticated and user.role_name == "super_admin")
 
 
 class GymViewSet(viewsets.ModelViewSet):

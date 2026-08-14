@@ -13,8 +13,7 @@ class IsSelfOrHasPermission(permissions.BasePermission):
         if not request.user.is_authenticated:
             return False
         
-        # Superusers can access everything
-        if request.user.is_superuser:
+        if request.user.role_name == "super_admin":
             return True
         
         if obj.id == request.user.id:
@@ -53,8 +52,7 @@ class HasModulePermission(permissions.BasePermission):
         if not request.user.is_authenticated:
             return False
         
-        # Superusers have all permissions
-        if request.user.is_superuser:
+        if request.user.role_name == "super_admin":
             return True
         
         # Get permission requirements from view
@@ -91,7 +89,7 @@ class HasGymAccess(permissions.BasePermission):
         user = request.user
         if not user or not user.is_authenticated:
             return False
-        if user.is_superuser or user.role_name == "super_admin":
+        if user.role_name == "super_admin":
             return bool(getattr(view, "allow_platform_access", False))
         return bool(user.gym_id and user.gym.is_active)
 
@@ -103,7 +101,7 @@ class IsSystemAdmin(permissions.BasePermission):
     message = "Only system administrators can perform this action."
     
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.is_superuser
+        return request.user.is_authenticated and request.user.role_name == "super_admin"
 
 
 class CanAccessSettings(permissions.BasePermission):
@@ -117,7 +115,7 @@ class CanAccessSettings(permissions.BasePermission):
         if not user.is_authenticated:
             return False
         
-        if user.is_superuser:
+        if user.role_name == "super_admin":
             return True
         
         # Only allow GET requests for non-admin users
@@ -166,7 +164,7 @@ class PermissionMixin:
             gym=getattr(user, "gym", None) if getattr(user, "is_authenticated", False) else None,
             is_super_admin=bool(
                 getattr(user, "is_authenticated", False)
-                and (getattr(user, "is_superuser", False) or getattr(user, "role_name", None) == "super_admin")
+                and getattr(user, "role_name", None) == "super_admin"
             ),
         )
         return super().initial(request, *args, **kwargs)
@@ -199,7 +197,7 @@ def permission_required(permission_module, permission_action):
             if not request.user.is_authenticated:
                 raise PermissionDenied("Authentication required.")
             
-            if request.user.is_superuser:
+            if request.user.role_name == "super_admin":
                 return view_func(request, *args, **kwargs)
             
             
