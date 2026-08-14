@@ -41,7 +41,7 @@ export default function SuperAdminPage() {
   const [account, setAccount] = useState(emptyAccount);
   const [selectedAccountId, setSelectedAccountId] = useState("");
   const [editingUser, setEditingUser] = useState<ManagedUser | null>(null);
-  const [editForm, setEditForm] = useState({ first_name: "", last_name: "", email: "", role_name: "admin" as ManagedUser["role_name"], gym: "" });
+  const [editForm, setEditForm] = useState({ first_name: "", last_name: "", email: "", role_name: "admin" as ManagedUser["role_name"], gym: "", password: "", confirmPassword: "" });
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(true);
@@ -143,6 +143,8 @@ export default function SuperAdminPage() {
       email: user.email,
       role_name: user.role_name,
       gym: user.gym ? String(user.gym) : "",
+      password: "",
+      confirmPassword: "",
     });
   };
 
@@ -150,10 +152,14 @@ export default function SuperAdminPage() {
     event.preventDefault();
     if (!editingUser) return;
     try {
+      const { password, confirmPassword, ...profileData } = editForm;
       await apiClient.patch(`/accounts/users/${editingUser.id}/`, {
-        ...editForm,
-        gym: editForm.role_name === "super_admin" ? null : Number(editForm.gym),
+        ...profileData,
+        gym: profileData.role_name === "super_admin" ? null : Number(profileData.gym),
       });
+      if (password || confirmPassword) {
+        await apiClient.post(`/accounts/users/${editingUser.id}/set-password/`, { password, confirm_password: confirmPassword });
+      }
       setEditingUser(null);
       setNotice("Account updated successfully.");
       await loadData();
@@ -214,6 +220,8 @@ export default function SuperAdminPage() {
           <input className="rounded border border-border bg-background p-2" placeholder="Last name" value={editForm.last_name} onChange={(event) => setEditForm({ ...editForm, last_name: event.target.value })} required />
           <input className="rounded border border-border bg-background p-2" type="email" placeholder="Email" value={editForm.email} onChange={(event) => setEditForm({ ...editForm, email: event.target.value })} required />
           <select className="rounded border border-border bg-background p-2" value={editForm.role_name} onChange={(event) => setEditForm({ ...editForm, role_name: event.target.value as ManagedUser["role_name"] })}><option value="admin">Gym Admin</option><option value="manager">Manager</option><option value="staff">Staff</option><option value="super_admin">Super Admin</option></select>
+          <input className="rounded border border-border bg-background p-2" type="password" placeholder="New password (optional)" value={editForm.password} onChange={(event) => setEditForm({ ...editForm, password: event.target.value })} />
+          <input className="rounded border border-border bg-background p-2" type="password" placeholder="Confirm new password" value={editForm.confirmPassword} onChange={(event) => setEditForm({ ...editForm, confirmPassword: event.target.value })} />
           {editForm.role_name !== "super_admin" && <select className="rounded border border-border bg-background p-2 sm:col-span-2" value={editForm.gym} onChange={(event) => setEditForm({ ...editForm, gym: event.target.value })} required><option value="">Select a gym</option>{gyms.map((gym) => <option key={gym.id} value={gym.id}>{gym.name}</option>)}</select>}
           <button className="rounded bg-primary px-4 py-2 text-white sm:col-span-2" type="submit">Save Changes</button>
         </form>

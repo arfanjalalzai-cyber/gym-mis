@@ -14,7 +14,7 @@ from core.permissions import PermissionMixin
 from .models import ActivityLog, Gym, User, UserPermission
 from .serializers import (
     ActivityLogSerializer, UserListSerializer, UserProfileSerializer,
-    ChangePasswordSerializer, LoginSerializer,
+    AdminSetPasswordSerializer, ChangePasswordSerializer, LoginSerializer,
     CreateUserSerializer, ForgotPasswordSerializer,
     VerifyResetCodeSerializer, ResetPasswordSerializer, VerifyEmailSerializer,
     ResendVerificationSerializer, SignUpSerializer, GymSerializer
@@ -92,6 +92,18 @@ class UserViewSet(PermissionMixin, viewsets.ModelViewSet):
         user.is_active = True
         user.save()
         return Response({'message': 'User activated successfully'})
+
+    @action(detail=True, methods=["post"], url_path="set-password")
+    def set_password(self, request, pk=None):
+        if request.user.role_name not in {"super_admin", "admin"}:
+            return Response({"detail": "Admin permission is required."}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = AdminSetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = self.get_object()
+        user.set_password(serializer.validated_data["password"])
+        user.save(update_fields=["password"])
+        return Response({"message": "Password changed successfully."})
 
     @action(detail=False, methods=['get', 'patch'], permission_module=None)
     def me(self, request):

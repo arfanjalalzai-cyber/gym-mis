@@ -388,6 +388,16 @@ class ChangePasswordSerializer(serializers.Serializer):
         return value
 
 
+class AdminSetPasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(required=True, validators=[validate_password])
+    confirm_password = serializers.CharField(required=True)
+
+    def validate(self, attrs):
+        if attrs["password"] != attrs["confirm_password"]:
+            raise serializers.ValidationError({"confirm_password": "Passwords do not match"})
+        return attrs
+
+
 class ActivityLogSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source='user.get_full_name', read_only=True)
     user_username = serializers.CharField(source='user.username', read_only=True)
