@@ -40,6 +40,8 @@ export default function SuperAdminPage() {
   const [gymSlug, setGymSlug] = useState("");
   const [account, setAccount] = useState(emptyAccount);
   const [selectedAccountId, setSelectedAccountId] = useState("");
+  const [showAccountPassword, setShowAccountPassword] = useState(false);
+  const [showEditPassword, setShowEditPassword] = useState(false);
   const [editingUser, setEditingUser] = useState<ManagedUser | null>(null);
   const [editForm, setEditForm] = useState({ first_name: "", last_name: "", email: "", role_name: "admin" as ManagedUser["role_name"], gym: "", password: "", confirmPassword: "" });
   const [error, setError] = useState("");
@@ -193,11 +195,12 @@ export default function SuperAdminPage() {
             <input className="rounded border border-border bg-background p-2" placeholder="Last name" value={account.last_name} onChange={(event) => setAccount({ ...account, last_name: event.target.value })} required />
             <input className="rounded border border-border bg-background p-2" placeholder="Username" value={account.username} onChange={(event) => setAccount({ ...account, username: event.target.value })} required />
             <input className="rounded border border-border bg-background p-2" type="email" placeholder="Email" value={account.email} onChange={(event) => setAccount({ ...account, email: event.target.value })} required />
-            <input className="rounded border border-border bg-background p-2" type="password" placeholder="Temporary password" value={account.password} onChange={(event) => setAccount({ ...account, password: event.target.value })} required />
+            <input className="rounded border border-border bg-background p-2" type={showAccountPassword ? "text" : "password"} placeholder="Temporary password" value={account.password} onChange={(event) => setAccount({ ...account, password: event.target.value })} required />
             <select className="rounded border border-border bg-background p-2" value={account.role_name} onChange={(event) => setAccount({ ...account, role_name: event.target.value as ManagedUser["role_name"] })}>
               <option value="admin">Gym Admin</option><option value="manager">Manager</option><option value="staff">Staff</option><option value="super_admin">Super Admin</option>
             </select>
             {account.role_name !== "super_admin" && <select className="rounded border border-border bg-background p-2 sm:col-span-2" value={account.gym} onChange={(event) => setAccount({ ...account, gym: event.target.value })} required><option value="">Select a gym</option>{gyms.filter((gym) => gym.is_active).map((gym) => <option key={gym.id} value={gym.id}>{gym.name}</option>)}</select>}
+            <label className="flex items-center gap-2 text-sm text-text-secondary sm:col-span-2"><input type="checkbox" checked={showAccountPassword} onChange={(event) => setShowAccountPassword(event.target.checked)} /> Show password</label>
             <button className="rounded bg-primary px-4 py-2 text-white sm:col-span-2" type="submit">Create Account</button>
             <div className="grid gap-3 border-t border-border pt-3 sm:col-span-2 sm:grid-cols-[1fr_auto]">
               <select className="rounded border border-border bg-background p-2" value={selectedAccountId} onChange={(event) => setSelectedAccountId(event.target.value)}>
@@ -220,8 +223,9 @@ export default function SuperAdminPage() {
           <input className="rounded border border-border bg-background p-2" placeholder="Last name" value={editForm.last_name} onChange={(event) => setEditForm({ ...editForm, last_name: event.target.value })} required />
           <input className="rounded border border-border bg-background p-2" type="email" placeholder="Email" value={editForm.email} onChange={(event) => setEditForm({ ...editForm, email: event.target.value })} required />
           <select className="rounded border border-border bg-background p-2" value={editForm.role_name} onChange={(event) => setEditForm({ ...editForm, role_name: event.target.value as ManagedUser["role_name"] })}><option value="admin">Gym Admin</option><option value="manager">Manager</option><option value="staff">Staff</option><option value="super_admin">Super Admin</option></select>
-          <input className="rounded border border-border bg-background p-2" type="password" placeholder="New password (optional)" value={editForm.password} onChange={(event) => setEditForm({ ...editForm, password: event.target.value })} />
-          <input className="rounded border border-border bg-background p-2" type="password" placeholder="Confirm new password" value={editForm.confirmPassword} onChange={(event) => setEditForm({ ...editForm, confirmPassword: event.target.value })} />
+          <input className="rounded border border-border bg-background p-2" type={showEditPassword ? "text" : "password"} placeholder="New password (optional)" value={editForm.password} onChange={(event) => setEditForm({ ...editForm, password: event.target.value })} />
+          <input className="rounded border border-border bg-background p-2" type={showEditPassword ? "text" : "password"} placeholder="Confirm new password" value={editForm.confirmPassword} onChange={(event) => setEditForm({ ...editForm, confirmPassword: event.target.value })} />
+          <label className="flex items-center gap-2 text-sm text-text-secondary sm:col-span-2"><input type="checkbox" checked={showEditPassword} onChange={(event) => setShowEditPassword(event.target.checked)} /> Show password</label>
           {editForm.role_name !== "super_admin" && <select className="rounded border border-border bg-background p-2 sm:col-span-2" value={editForm.gym} onChange={(event) => setEditForm({ ...editForm, gym: event.target.value })} required><option value="">Select a gym</option>{gyms.map((gym) => <option key={gym.id} value={gym.id}>{gym.name}</option>)}</select>}
           <button className="rounded bg-primary px-4 py-2 text-white sm:col-span-2" type="submit">Save Changes</button>
         </form>
