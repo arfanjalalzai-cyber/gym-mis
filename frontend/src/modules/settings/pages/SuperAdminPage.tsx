@@ -39,6 +39,7 @@ export default function SuperAdminPage() {
   const [gymName, setGymName] = useState("");
   const [gymSlug, setGymSlug] = useState("");
   const [account, setAccount] = useState(emptyAccount);
+  const [selectedAccountId, setSelectedAccountId] = useState("");
   const [editingUser, setEditingUser] = useState<ManagedUser | null>(null);
   const [editForm, setEditForm] = useState({ first_name: "", last_name: "", email: "", role_name: "admin" as ManagedUser["role_name"], gym: "" });
   const [error, setError] = useState("");
@@ -192,7 +193,16 @@ export default function SuperAdminPage() {
             </select>
             {account.role_name !== "super_admin" && <select className="rounded border border-border bg-background p-2 sm:col-span-2" value={account.gym} onChange={(event) => setAccount({ ...account, gym: event.target.value })} required><option value="">Select a gym</option>{gyms.filter((gym) => gym.is_active).map((gym) => <option key={gym.id} value={gym.id}>{gym.name}</option>)}</select>}
             <button className="rounded bg-primary px-4 py-2 text-white sm:col-span-2" type="submit">Create Account</button>
-            <button className="rounded border border-border px-4 py-2 sm:col-span-2" type="button" onClick={() => document.getElementById("platform-accounts")?.scrollIntoView({ behavior: "smooth" })}>Manage / Edit Accounts</button>
+            <div className="grid gap-3 border-t border-border pt-3 sm:col-span-2 sm:grid-cols-[1fr_auto]">
+              <select className="rounded border border-border bg-background p-2" value={selectedAccountId} onChange={(event) => setSelectedAccountId(event.target.value)}>
+                <option value="">Select an account to edit</option>
+                {users.map((user) => <option key={user.id} value={user.id}>{user.username} — {user.first_name} {user.last_name}</option>)}
+              </select>
+              <button className="rounded border border-primary px-4 py-2 text-primary disabled:cursor-not-allowed disabled:opacity-50" type="button" disabled={!selectedAccountId} onClick={() => {
+                const selectedUser = users.find((user) => user.id === Number(selectedAccountId));
+                if (selectedUser) openEditUser(selectedUser);
+              }}>Edit Selected Account</button>
+            </div>
           </form>
         </section>
       </div>
