@@ -131,10 +131,25 @@ class UserProfileSerializer(serializers.ModelSerializer):
         }
     
     def update(self, instance, validated_data):
+        request = self.context.get("request")
+        requester = getattr(request, "user", None)
+        is_platform_admin = bool(
+            requester
+            and requester.is_authenticated
+            and (requester.is_superuser or requester.role_name == "super_admin")
+        )
+
+        if "gym" in validated_data and not is_platform_admin:
+            validated_data.pop("gym")
+
         # Handle role update
         if 'role_name' in validated_data:
             role_name = normalize_role_name(validated_data.pop('role_name'))
             valid_roles = {choice[0] for choice in ROLE_CHOICES}
+            if not is_platform_admin and role_name == "super_admin":
+                raise serializers.ValidationError({"role_name": "Only a super administrator can assign this role."})
+            if requester and requester.id == instance.id and not is_platform_admin:
+                raise serializers.ValidationError({"role_name": "You cannot change your own role."})
             if role_name:
                 if role_name in valid_roles:
                     instance.role_name = role_name

@@ -122,6 +122,16 @@ export default function SuperAdminPage() {
     }
   };
 
+  const assignUserGym = async (user: ManagedUser, gymId: string) => {
+    try {
+      await apiClient.patch(`/accounts/users/${user.id}/`, { gym: gymId ? Number(gymId) : null });
+      setNotice("Account gym assignment updated successfully.");
+      await loadData();
+    } catch {
+      setError("Account gym assignment could not be updated.");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader title="Super Admin" subtitle="Private platform management for gyms, administrators, and platform accounts." />
@@ -164,7 +174,7 @@ export default function SuperAdminPage() {
 
       <section className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="border-b border-border p-5"><h2 className="text-lg font-semibold text-text-primary">Platform Accounts</h2></div>
-        {loading ? <p className="p-5 text-text-secondary">Loading accounts…</p> : <table className="w-full text-left text-sm"><thead><tr className="border-b border-border text-text-secondary"><th className="p-3">Account</th><th>Role</th><th>Gym</th><th>Status</th><th className="p-3">Action</th></tr></thead><tbody>{users.map((user) => <tr key={user.id} className="border-b border-border last:border-0"><td className="p-3"><p className="font-medium">{user.first_name} {user.last_name}</p><p className="text-text-secondary">{user.username}</p></td><td className="capitalize">{user.role_name.replace("_", " ")}</td><td>{user.gym ? gymNames.get(user.gym) ?? "Gym" : "Platform"}</td><td>{user.is_active ? "Active" : "Disabled"}</td><td className="p-3"><button className="rounded border border-border px-3 py-1" onClick={() => void toggleUser(user)}>{user.is_active ? "Disable" : "Enable"}</button></td></tr>)}</tbody></table>}
+        {loading ? <p className="p-5 text-text-secondary">Loading accounts…</p> : <table className="w-full text-left text-sm"><thead><tr className="border-b border-border text-text-secondary"><th className="p-3">Account</th><th>Role</th><th>Gym</th><th>Status</th><th className="p-3">Action</th></tr></thead><tbody>{users.map((user) => <tr key={user.id} className="border-b border-border last:border-0"><td className="p-3"><p className="font-medium">{user.first_name} {user.last_name}</p><p className="text-text-secondary">{user.username}</p></td><td className="capitalize">{user.role_name.replace("_", " ")}</td><td>{user.role_name === "super_admin" ? "Platform" : <select className="rounded border border-border bg-background p-1" value={user.gym ?? ""} onChange={(event) => void assignUserGym(user, event.target.value)}><option value="">Unassigned</option>{gyms.map((gym) => <option key={gym.id} value={gym.id}>{gym.name}</option>)}</select>}</td><td>{user.is_active ? "Active" : "Disabled"}</td><td className="p-3"><button className="rounded border border-border px-3 py-1" onClick={() => void toggleUser(user)}>{user.is_active ? "Disable" : "Enable"}</button></td></tr>)}</tbody></table>}
       </section>
     </div>
   );

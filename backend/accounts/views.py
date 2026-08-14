@@ -66,7 +66,7 @@ class UserViewSet(PermissionMixin, viewsets.ModelViewSet):
         if user.is_superuser or user.role_name == "super_admin":
             return User.objects.all()
         if user.role_name == "admin":
-            return User.objects.filter(gym=user.gym)
+            return User.objects.filter(gym=user.gym).exclude(role_name="super_admin")
         return User.objects.filter(id=user.id)
     
     def get_serializer_class(self):
